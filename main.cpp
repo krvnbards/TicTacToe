@@ -11,16 +11,34 @@ using namespace std;
 // Plano pud nako nga naay option nga unsay character or symbol ang ganahan for player
 // For now ana lang sa wala paman ta ka code sa gameplay jud
 
+
 char board[3][3] = {
+	{' ', ' ', ' '},
+	{' ', ' ', ' '},
+	{' ', ' ', ' '}
+};
+
+char legendBoard[3][3] = {
 	{'1', '2', '3'},
 	{'4', '5', '6'},
 	{'7', '8', '9'}
 };
 
+int currentPlayer;
+char playerSymbols[2] = {'O', 'X'}; // changed marker to this para sa SettingsMenu()
+
+int firstPlayer = 2;
+
+
 // Game Settings
 int GAME_MODE = -1; // 1 = PvP 2 = PvE
 string PlayerName[2];
 int GAME_ROUNDS = -1;
+int currentRound = 1;
+int playerScore[2];
+string boardColor = "0a"; // Default green
+string backgroundColor = "0"; // Default black background
+bool resetProgress = false;
 
 // KERVIN: Save the player state
 enum stat_list {
@@ -38,8 +56,6 @@ enum stat_list {
 
 // KERVIN: Inialize para mo start sya sa main menu
 enum stat_list STATUS = MAINMENU;
-
-
 //[--------------------------------------------------------------]
 
 //[----------------------------FUNCTION DECLARATIONS----------------------------]
@@ -49,15 +65,29 @@ void StartGame();
 void SelectMode();
 void SelectRounds();
 void DisplayBoard();
+void clearBoard();
+
+void roundEnd(int winner);
 
 void How_To_Play();
 void DevelopersPage();
+void SettingsMenu();
 void ExitGame();
 void DevelopersArt();
+bool placeMarker(int slot);
+
+void ResetGameSettings();
+
+int checkWinner();
 
 //[-----------------------------------------------------------------------------]
+
+/* sometimes dili ma end ang round bisag nadaug na ang isa ka player,
+   kailangan pun on ang nine boxes sa board para ma win. 
+*/
 int main() {
 	system("color 0a");
+	ResetGameSettings();
 	while(1) {
 		switch(STATUS) {
 			case MAINMENU: {
@@ -72,7 +102,7 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 				
-				cout << "Enter name for Player 1: ";
+				cout << "\n\nEnter name for Player 1: ";
 				cin >> PlayerName[0];
 				
 				if(GAME_MODE == 1) {
@@ -88,8 +118,8 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 				
-				cout << "Enter name for Player 2: ";
-				cin >> PlayerName[0];
+				cout << "\n\nEnter name for Player 2: ";
+				cin >> PlayerName[1];
 				
 				STATUS = GAME_SELECT_ROUNDS;
 				break;
@@ -101,7 +131,7 @@ int main() {
 			case GAME_STARTED: {
 				system("cls");
 				TicTacToeArt();
-				DisplayBoard();
+				StartGame();
 				system("pause");
 				break;
 			}
@@ -111,6 +141,10 @@ int main() {
 			}
 			case HOW_TO_PLAY: {
 				How_To_Play();
+				break;
+			}
+			case SETTINGS: {
+				SettingsMenu();
 				break;
 			}
 			case EXITGAME: {
@@ -123,6 +157,24 @@ int main() {
 }
 
 //[----------------------------FUNCTION DEFINITIONS----------------------------]
+
+void roundEnd(int winner) {
+	
+	cout << setw(40) << PlayerName[winner] << " wins the round!" << endl;
+	currentRound++;
+	playerScore[winner]++;
+	clearBoard();
+	system("pause");
+	StartGame();
+}
+
+void clearBoard() {
+	for(int i = 0; i < 3; i++) {
+		for(int h = 0; h < 3; h++) {
+			board[i][h] = ' ';
+		}
+	}
+}
 
 void TicTacToeArt() {
 	string TicTacToeArt = R"(                                                                                                                                               
@@ -146,11 +198,53 @@ void TicTacToeArt() {
 	cout << "________________________________________________________________________________________________________________________\n";
 }
 
+void StartGame() {
+	
+	DisplayBoard();
+	if(firstPlayer == 1)
+		currentPlayer = 2;
+	else
+		currentPlayer = 1;
+	
+	int slot;
+	firstPlayer = currentPlayer;
+	for(int i = 0; i < 9; i++) {
+		cout << endl <<  setw(21) << "Player " << currentPlayer << " (" << PlayerName[currentPlayer-1] << "), enter slot to mark (1-9): "; 
+		cin >> slot;
+		
+		if (slot < 1 || slot > 9 || !placeMarker(slot) || cin.fail()) {
+            cout << setw(39) << "Invalid move! Try again.\n";
+			system("pause");
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cin.clear();
+            i--; // Retain the turn
+            continue;
+        }
+        
+        DisplayBoard();
+        
+        int winner = checkWinner();
+        if(winner != 0) {
+        	roundEnd(winner-1);
+        	return;
+		}
+		
+		if(currentPlayer == 1) currentPlayer = 2;
+        else currentPlayer = 1;
+	}
+}
+
+void ResetGameSettings() {
+	currentRound = 1;
+	playerScore[0] = 0;
+	playerScore[1] = 0;
+}
+
 void SelectMode() {
 	while(GAME_MODE < 1) {
 		system("cls");
 		TicTacToeArt();
-		cout << "[1] Player vs Player\n[2] Player vs Computer\nEnter your choice: ";
+		cout << "\n\n[1] Player vs Player\n[2] Player vs Computer\nEnter your choice: ";
 		cin >> GAME_MODE;
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		
@@ -164,6 +258,19 @@ void SelectMode() {
 	
 	STATUS = GAME_ENTER_NAME1;
 
+}
+
+int checkWinner() {
+    
+    for (int i = 0; i < 3; i++) {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && (board[i][0] != ' ' && board[i][1] != ' ' && board[i][2] != ' ')) return currentPlayer;
+        if (board[0][i] == board[1][i] && board[1][i] == board[2][i] && (board[0][i] != ' ' && board[1][i] != ' ' && board[2][i] != ' ')) return currentPlayer;
+    }
+    
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && (board[0][0] != ' ' && board[1][1] != ' ' && board[1][1] != ' ' && board[2][2] != ' ')) return currentPlayer;
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0] && (board[0][2] != ' ' && board[1][1] != ' ' && board[1][1] != ' ' && board[2][2] != ' ')) return currentPlayer;
+    
+    return 0; 
 }
 
 void SelectRounds() {
@@ -182,6 +289,9 @@ void SelectRounds() {
 			continue;
 		}
 		
+		cin.clear();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		
 		switch(GAME_ROUNDS) {
 			case 1: GAME_ROUNDS = 3; break;
 			case 2: GAME_ROUNDS = 5; break;
@@ -193,11 +303,26 @@ void SelectRounds() {
 }
 
 void DisplayBoard() {
-	cout << board[0][0] << " | " << board[0][1] << " | " << board[0][2] << endl;
-	cout << "====================================" << endl;
-	cout << board[1][0] << " | " << board[1][1] << " | " << board[1][2] << endl;
-	cout << "====================================" << endl;
-	cout << board[2][0] << " | " << board[2][1] << " | " << board[2][2] << endl;
+	
+	system("cls");
+	TicTacToeArt();
+	cout << "\n\n";
+	//int maxLength = max(PlayerName[0].length(), PlayerName[1].length());
+	
+	cout << setw(23) << "Score:\n";
+	cout << setw(25) << right << PlayerName[0] << " - " << playerScore[0] << endl;
+	cout << setw(25) << right << PlayerName[1] << " - " << playerScore[1] << endl << endl;
+	
+	cout << setw(21) << "Round: " << currentRound << " / " << GAME_ROUNDS  << setw(40) << "Board Slot" << setw(37) << "Legend" << endl;
+	cout << setw(35) << "     |     |     " << setw(35) << "     |     |      " << setw(40) << "________________________" << endl; // 24
+    cout << setw(20) <<"  " << board[0][0] << "  |  " << board[0][1] << "  |  " << board[0][2] << "  " << setw(19) <<"  " << legendBoard[0][0] << "  |  " << legendBoard[0][1] << "  |  " << legendBoard[0][2] << "    " << setw(15) << " |" <<  setw(25) << right <<  "|" << endl;
+    cout << setw(35) << "_____|_____|_____" << setw(35) << "_____|_____|_____ " << setw(16) << "|" << setw(12) << PlayerName[0] << " == " << playerSymbols[0] <<  setw(8) << "|" << endl;
+    cout << setw(35) << "     |     |     " << setw(35) << "     |     |      " << setw(16) << "|" << setw(12) << PlayerName[1] << " == " << playerSymbols[1] <<  setw(8) << "|" << endl;
+    cout << setw(20) <<"  " << board[1][0] << "  |  " << board[1][1] << "  |  " << board[1][2] << "  " << setw(19) <<"  " << legendBoard[1][0] << "  |  " << legendBoard[1][1] << "  |  " << legendBoard[1][2] << "   " << setw(41) << "|________________________|" << endl;
+    cout << setw(35) << "_____|_____|_____" << setw(35) << "_____|_____|_____\n";
+    cout << setw(35) << "     |     |     " << setw(35) << "     |     |     \n";
+    cout << setw(20) <<"  " << board[2][0] << "  |  " << board[2][1] << "  |  " << board[2][2] << "  " << setw(19) <<"  " << legendBoard[2][0] << "  |  " << legendBoard[2][1] << "  |  " << legendBoard[2][2] << "  \n";
+    cout << setw(35) << "     |     |     " << setw(35) << "     |     |     \n";
 }
 
 void DevelopersPage() {
@@ -261,6 +386,110 @@ void ExitGame() {
 	system("cls");
 }
 
+void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok najud siya
+	system("cls");
+	TicTacToeArt();
+    cout << "\nEnter symbol for Player 1: ";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> playerSymbols[0];
+    
+    cout << "\nEnter symbol for Player 2: ";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> playerSymbols[1];
+    
+    cout << "Player symbols updated!" << endl;
+    system("pause");
+    SettingsMenu();
+}
+
+void ChangeBoardColor() { // if other color (light gray, etc.) na ang background, then e change ang board color, ma reset to black ang background
+	TicTacToeArt();       // tarungon ra nya na nako - jules
+    int colorChoice;
+    cout << "\nChoose a board color:" << endl;
+    cout << "\n1. Blue \n2. Green \n3. Aqua \n4. Red \n5. Purple \n6. Yellow \n7. Light Gray \n8. Light Green \n9. Light Aqua \n10. Light Red " << endl;
+    cout << "Enter your choice (1-10): ";
+    cin >> colorChoice;
+
+    switch(colorChoice) {
+        case 1: boardColor = "01"; break;
+        case 2: boardColor = "0a"; break;
+        case 3: boardColor = "03"; break;
+        case 4: boardColor = "04"; break;
+        case 5: boardColor = "05"; break;
+        case 6: boardColor = "06"; break;
+        case 7: boardColor = "08"; break;
+        case 8: boardColor = "0a"; break;
+        case 9: boardColor = "0b"; break;
+        case 10: boardColor = "0c"; break;
+        default: cout << "Invalid choice. Defaulting to green." << endl; boardColor = "0a"; break;
+    }
+
+    cout << "Board color updated!" << endl;
+    system(("color " + backgroundColor + boardColor.substr(1)).c_str());
+    system("pause");
+    SettingsMenu();
+}
+
+
+void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice na color e add
+	system("cls");
+	TicTacToeArt();
+	int choice;
+    cout << "\n1. Light Gray\n2. Light Aqua\n3. Light Red\n4. Reset to Default (Black)\n";
+    cout << "Enter your choice: ";
+    cin >> choice;
+    
+     switch (choice) {
+        case 1:
+            cout << "\033[47m"; // Light Gray Background
+            system("cls");
+            break;
+        case 2:
+            cout << "\033[106m"; // Light Aqua Background
+            system("cls");
+            break;
+        case 3:
+            cout << "\033[101m"; // Light Red Background
+            system("cls");
+            break;
+        case 4:
+            cout << "\033[40m"; // Black Background (Reset)
+            system("cls");
+            break;
+        default:
+            cout << "Invalid choice." << endl;
+            return;
+    }
+    TicTacToeArt();
+    cout << "\nBackground color changed!" << endl;
+    system("pause");
+    SettingsMenu();
+}
+
+void SettingsMenu() { // Not complete, but some progress made
+    system("cls");
+    TicTacToeArt();
+    int choice;
+
+    cout << "\nSettings Menu" << endl;
+    cout << "1. Change Player Symbols" << endl;
+    cout << "2. Change Board Color" << endl;
+    cout << "3. Change Background " << endl;
+    cout << "4. Exit Settings" << endl;
+    cout << "\nEnter your choice: ";
+    cin >> choice;
+
+    switch (choice) {
+        case 1: ChangePlayerSymbols(); break;
+        case 2: ChangeBoardColor(); break;
+        case 3: ChangeBackgroundColor(); break;
+        case 4: DisplayMenu(); break;
+        default: cout << "Invalid choice. Returning to Main Menu..." << endl; break;
+    }
+    system("pause");
+    STATUS = MAINMENU;
+}
+
 
 void DisplayMenu() {
 	system("cls");
@@ -279,7 +508,7 @@ void DisplayMenu() {
 	)";
 	
 	cout << R"(	
- ____                            _____              ___ _             
+ ____                              _____              ___ _             
 |___ \      /\  /\_____      __   /__   \___         / _ | | __ _ _   _ 
   __) |    / /_/ / _ \ \ /\ / _____ / /\/ _ \ _____ / /_)| |/ _` | | | |
  / __/    / __  | (_) \ V  V |_____/ / | (_) |_____/ ___/| | (_| | |_| |
@@ -319,12 +548,30 @@ void DisplayMenu() {
 	cout << "Enter choice: ";
 	cin >> status;
 	
+	if(status < 1 || status > 5 || cin.fail()) {
+		cin.clear();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		STATUS = MAINMENU;
+	}
+	
 	switch(status) {
 		case 1: STATUS = GAME_SELECT_MODE; break;
 		case 2: STATUS = HOW_TO_PLAY; break;
 		case 3: STATUS = DEVELOPERS; break;
 		case 4: STATUS = SETTINGS; break;
 		case 5: STATUS = EXITGAME; break;
+		default: STATUS = MAINMENU; break;
 	}
+}
+
+bool placeMarker(int slot) {
+    int row = (slot - 1) / 3;
+    int col = (slot - 1) % 3;
+
+    if (board[row][col] != 'X' && board[row][col] != 'O') {
+        board[row][col] = playerSymbols[currentPlayer-1];
+        return true;
+    }
+    return false;
 }
 //[----------------------------------------------------------------------------]
