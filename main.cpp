@@ -25,7 +25,7 @@ char legendBoard[3][3] = {
 };
 
 int currentPlayer;
-char playerSymbols[2] = {'O', 'X'}; // changed marker to this para sa SettingsMenu()
+char playerSymbols[2] = {'O', 'X'}; // changed marker to 'playerSymbols' para sa SettingsMenu()
 
 int firstPlayer = 2;
 
@@ -72,6 +72,9 @@ void roundEnd(int winner);
 void How_To_Play();
 void DevelopersPage();
 void SettingsMenu();
+	void ChangePlayerSymbols();
+	void ChangeBoardColor();
+	void ChangeBackgroundColor();
 void ExitGame();
 void DevelopersArt();
 bool placeMarker(int slot);
@@ -209,7 +212,7 @@ void StartGame() {
 	int slot;
 	firstPlayer = currentPlayer;
 	for(int i = 0; i < 9; i++) {
-		cout << endl <<  setw(21) << "Player " << currentPlayer << " (" << PlayerName[currentPlayer-1] << "), enter slot to mark (1-9): "; 
+		cout << endl <<  setw(21) << "\n\nPlayer " << currentPlayer << " (" << PlayerName[currentPlayer-1] << "), enter slot to mark (1-9): "; 
 		cin >> slot;
 		
 		if (slot < 1 || slot > 9 || !placeMarker(slot) || cin.fail()) {
@@ -334,6 +337,38 @@ void DevelopersPage() {
 	cout << setw(76) << "|                 Kendrick Lanuza                  |" << endl;
 	cout << setw(76) << "|                  Jules Omambac                   |" << endl;
 	cout << setw(76) << "====================================================" << endl;
+
+	string choice;
+	while (1) {
+		//enter y - yes or n - no
+	cout << setw(57) << endl << "See developers description(y/n): ";
+	cin >> choice;
+	
+	if (choice == "Y" || choice == "y"){
+		cout << setw(47) << endl << "Name:   Kervin Bardilas" << endl;
+		cout << setw(35) << "Age:    Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(37) << "Motto:  Motto" << endl;
+				
+		cout << setw(47) << endl <<"Name:   Kendrick Lanuza" << endl;
+		cout << setw(35) << "Age:    Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(37) << "Motto:  Motto" << endl;
+				
+		cout << setw(43) << endl <<"Name: Jules Omambac" << endl;
+		cout << setw(32) << "Age: Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(36) << "Motto: Motto" << endl;
+		break;
+	} else if (choice == "N" || choice == "n") {
+		cout << "Return to main menu!" << endl;
+		STATUS = MAINMENU;
+		break;
+	} else {
+		cout << setw(39) << "Invalid choice!" << endl;
+	}
+	
+	}
 	system("pause");
 	STATUS = MAINMENU;
 }
@@ -341,7 +376,7 @@ void DevelopersPage() {
 void How_To_Play() {
 	system("cls");
 	TicTacToeArt();
-	cout << "\n\t\tHow to Play Tic-Tac-Toe" << endl;
+	cout << "\nHow to Play Tic-Tac-Toe" << endl;
     cout << "\n1. The game is played on a 3x3 grid." << endl;
     cout << "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
     cout << "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
@@ -360,7 +395,7 @@ void How_To_Play() {
 
 void DevelopersArt() {
 	string DevelopersArt =	 R"(                                            
-___               _                           
+      ___               _                           
      /   \_____   _____| | ___  _ __   ___ _ __ ___ 
     / /\ / _ \ \ / / _ | |/ _ \| '_ \ / _ | '__/ __|
    / /_/|  __/\ V |  __| | (_) | |_) |  __| |  \__ \
@@ -386,87 +421,7 @@ void ExitGame() {
 	system("cls");
 }
 
-void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok najud siya
-	system("cls");
-	TicTacToeArt();
-    cout << "\nEnter symbol for Player 1: ";
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    cin >> playerSymbols[0];
-    
-    cout << "\nEnter symbol for Player 2: ";
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    cin >> playerSymbols[1];
-    
-    cout << "Player symbols updated!" << endl;
-    system("pause");
-    SettingsMenu();
-}
-
-void ChangeBoardColor() { // if other color (light gray, etc.) na ang background, then e change ang board color, ma reset to black ang background
-	TicTacToeArt();       // tarungon ra nya na nako - jules
-    int colorChoice;
-    cout << "\nChoose a board color:" << endl;
-    cout << "\n1. Blue \n2. Green \n3. Aqua \n4. Red \n5. Purple \n6. Yellow \n7. Light Gray \n8. Light Green \n9. Light Aqua \n10. Light Red " << endl;
-    cout << "Enter your choice (1-10): ";
-    cin >> colorChoice;
-
-    switch(colorChoice) {
-        case 1: boardColor = "01"; break;
-        case 2: boardColor = "0a"; break;
-        case 3: boardColor = "03"; break;
-        case 4: boardColor = "04"; break;
-        case 5: boardColor = "05"; break;
-        case 6: boardColor = "06"; break;
-        case 7: boardColor = "08"; break;
-        case 8: boardColor = "0a"; break;
-        case 9: boardColor = "0b"; break;
-        case 10: boardColor = "0c"; break;
-        default: cout << "Invalid choice. Defaulting to green." << endl; boardColor = "0a"; break;
-    }
-
-    cout << "Board color updated!" << endl;
-    system(("color " + backgroundColor + boardColor.substr(1)).c_str());
-    system("pause");
-    SettingsMenu();
-}
-
-
-void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice na color e add
-	system("cls");
-	TicTacToeArt();
-	int choice;
-    cout << "\n1. Light Gray\n2. Light Aqua\n3. Light Red\n4. Reset to Default (Black)\n";
-    cout << "Enter your choice: ";
-    cin >> choice;
-    
-     switch (choice) {
-        case 1:
-            cout << "\033[47m"; // Light Gray Background
-            system("cls");
-            break;
-        case 2:
-            cout << "\033[106m"; // Light Aqua Background
-            system("cls");
-            break;
-        case 3:
-            cout << "\033[101m"; // Light Red Background
-            system("cls");
-            break;
-        case 4:
-            cout << "\033[40m"; // Black Background (Reset)
-            system("cls");
-            break;
-        default:
-            cout << "Invalid choice." << endl;
-            return;
-    }
-    TicTacToeArt();
-    cout << "\nBackground color changed!" << endl;
-    system("pause");
-    SettingsMenu();
-}
-
-void SettingsMenu() { // Not complete, but some progress made
+void SettingsMenu() { // Three settings feature, wala nako lain mahunaan concept for settings - j
     system("cls");
     TicTacToeArt();
     int choice;
@@ -483,21 +438,82 @@ void SettingsMenu() { // Not complete, but some progress made
         case 1: ChangePlayerSymbols(); break;
         case 2: ChangeBoardColor(); break;
         case 3: ChangeBackgroundColor(); break;
-        case 4: DisplayMenu(); break;
+        case 4:	STATUS = MAINMENU; break;
         default: cout << "Invalid choice. Returning to Main Menu..." << endl; break;
     }
     system("pause");
     STATUS = MAINMENU;
 }
 
+void ChangePlayerSymbols() { // Change symbol feature
+	system("cls");
+	TicTacToeArt();
+	
+    cout << "\nEnter symbol for Player 1: ";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> playerSymbols[0];
+    
+    cout << "\nEnter symbol for Player 2: ";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> playerSymbols[1];
+    
+    cout << "Player symbols updated!" << endl;
+    system("pause");
+    SettingsMenu();
+}
+
+void ChangeBoardColor() { // Change board (text) color
+    system("cls");
+    TicTacToeArt();
+    int colorChoice;
+
+    cout << "\nChoose a board color:" << endl;
+    cout << "1. Dark Gray\n2. Teal\n3. Olive\n4. Maroon\n6. Indigo\n";
+    cout << "Enter your choice (1-7): ";
+    cin >> colorChoice;
+
+    switch(colorChoice) {
+        case 1: boardColor = "08"; break; // Dark Gray
+        case 2: boardColor = "03"; break; // Teal
+        case 3: boardColor = "02"; break; // Olive
+        case 4: boardColor = "04"; break; // Maroon
+        case 5: boardColor = "05"; break; // Indigo
+        default: cout << "Invalid choice. Defaulting to Dark Green." << endl; boardColor = "0a"; break;
+    }
+
+    cout << "Board color updated!" << endl;
+    system(("color " + backgroundColor + boardColor.substr(1)).c_str());
+    system("pause");
+    SettingsMenu();
+}
+
+void ChangeBackgroundColor() { // Change background color
+    system("cls");             // dili ma color tanan, if i fullscreen
+    TicTacToeArt();            // ex. "creme" ang bg, inig fullscreen. half "creme" half black ang bg
+    int choice; 			   // will fix this nya  				-jules
+
+    cout << "\n1. Gray\n2. White\n3. Creme\n4. Reset to Default (Black)\n";
+    cout << "Enter your choice: ";
+    cin >> choice;
+
+    switch (choice) {
+        case 1: backgroundColor = "8"; break; // Gray
+        case 2: backgroundColor = "7"; break; // White
+        case 3: backgroundColor = "E"; break; // Creme
+        case 4: backgroundColor = "0"; break; // Reset to Black
+        default: cout << "Invalid choice. No changes made." << endl; return;
+    }
+
+    cout << "Background color changed!" << endl;
+    system(("color " + backgroundColor + boardColor.substr(1)).c_str());
+    system("pause");
+    SettingsMenu();
+}
 
 void DisplayMenu() {
 	system("cls");
-	
 	TicTacToeArt();
-	
 	int status=-1;
-	
 	cout << R"(	
  _         ___ _                 ___                     
 / |       / _ | | __ _ _   _    / _ \__ _ _ __ ___   ___ 
@@ -543,7 +559,6 @@ void DisplayMenu() {
                           
 	)";
 	 
-	 
 	//cout << "[1] Play Game\n[2] How to Play\n[3] Developers\n[4] Settings\n[5] Exit\n\n" << endl;
 	cout << "Enter choice: ";
 	cin >> status;
@@ -568,7 +583,7 @@ bool placeMarker(int slot) {
     int row = (slot - 1) / 3;
     int col = (slot - 1) % 3;
 
-    if (board[row][col] != 'X' && board[row][col] != 'O') {
+    if (board[row][col] != playerSymbols[0] && board[row][col] != playerSymbols[1]) {
         board[row][col] = playerSymbols[currentPlayer-1];
         return true;
     }
