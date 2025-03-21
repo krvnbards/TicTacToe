@@ -28,6 +28,7 @@ enum stat_list {
 	HOW_TO_PLAY,
 	DEVELOPERS,
 	SETTINGS,
+	EXITGAME,
 	GAME_SELECT_MODE,
 	GAME_ENTER_NAME1,
 	GAME_ENTER_NAME2,
@@ -52,10 +53,9 @@ void DisplayBoard();
 void How_To_Play();
 void DevelopersPage();
 void ExitGame();
+void DevelopersArt();
 
 //[-----------------------------------------------------------------------------]
-
-
 int main() {
 	system("color 0a");
 	while(1) {
@@ -113,7 +113,7 @@ int main() {
 				How_To_Play();
 				break;
 			}
-			case SETTINGS: {
+			case EXITGAME: {
                 ExitGame();
                 break;
             }
@@ -203,11 +203,12 @@ void DisplayBoard() {
 void DevelopersPage() {
 	system("cls");
 	TicTacToeArt();
-	/*
-	
-	CODE GOES HERE
-	
-	*/
+	DevelopersArt();
+	cout << setw(76) << "====================================================" << endl;	
+	cout << setw(76) << "|                 Kervin Bardilas                  |" << endl;
+	cout << setw(76) << "|                 Kendrick Lanuza                  |" << endl;
+	cout << setw(76) << "|                  Jules Omambac                   |" << endl;
+	cout << setw(76) << "====================================================" << endl;
 	system("pause");
 	STATUS = MAINMENU;
 }
@@ -230,6 +231,23 @@ void How_To_Play() {
     cout << "\nHave fun and enjoy the game!\n" << endl;
 	system("pause");
 	STATUS = MAINMENU;
+}
+
+void DevelopersArt() {
+	string DevelopersArt =	 R"(                                            
+___               _                           
+     /   \_____   _____| | ___  _ __   ___ _ __ ___ 
+    / /\ / _ \ \ / / _ | |/ _ \| '_ \ / _ | '__/ __|
+   / /_/|  __/\ V |  __| | (_) | |_) |  __| |  \__ \
+  /___,' \___| \_/ \___|_|\___/| .__/ \___|_|  |___/
+                               |_|                  
+	)";
+
+	istringstream stream(DevelopersArt);
+	string line;
+	while(getline(stream, line)) {
+		std::cout << std::setw(75) << line << std::endl;
+	}
 }
 
 void ExitGame() {
@@ -306,7 +324,7 @@ void DisplayMenu() {
 		case 2: STATUS = HOW_TO_PLAY; break;
 		case 3: STATUS = DEVELOPERS; break;
 		case 4: STATUS = SETTINGS; break;
-		case 5: STATUS = SETTINGS; break;
+		case 5: STATUS = EXITGAME; break;
 	}
 }
 //[----------------------------------------------------------------------------]
