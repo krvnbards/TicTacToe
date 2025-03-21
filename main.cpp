@@ -51,6 +51,7 @@ void DisplayBoard();
 
 void How_To_Play();
 void DevelopersPage();
+void ExitGame();
 
 //[-----------------------------------------------------------------------------]
 
@@ -112,6 +113,10 @@ int main() {
 				How_To_Play();
 				break;
 			}
+			case SETTINGS: {
+                ExitGame();
+                break;
+            }
 		}
 	} cout << "END OF LOOP MAIN";
 	return 1;
@@ -210,14 +215,34 @@ void DevelopersPage() {
 void How_To_Play() {
 	system("cls");
 	TicTacToeArt();
-	/*
-	
-	CODE GOES HERE
-	
-	*/
+	cout << "\n\t\tHow to Play Tic-Tac-Toe" << endl;
+    cout << "\n1. The game is played on a 3x3 grid." << endl;
+    cout << "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
+    cout << "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
+    cout << "4. The first player to get three of their marks in a row (vertically, horizontally, or diagonally) wins the round." << endl;
+    cout << "5. If all 9 spaces are filled and no player has three in a row, the round is a draw." << endl;
+    cout << "6. The game continues until all selected rounds are completed." << endl;
+
+    cout << "\nControls:" << endl;
+    cout << "- Enter the number (1 to 9) corresponding to the space you want to mark." << endl;
+    cout << "- Invalid moves (selecting an already occupied space) will result on giving you a chance to take another move." << endl;
+
+    cout << "\nHave fun and enjoy the game!\n" << endl;
 	system("pause");
 	STATUS = MAINMENU;
 }
+
+void ExitGame() {
+    system("cls");
+    TicTacToeArt();
+    cout << "\nThank you for playing Tic-Tac-Toe!" << endl;
+    cout << "\nExiting the game..." << endl;
+    system("pause");
+	STATUS = MAINMENU;
+	exit(0);
+	system("cls");
+}
+
 
 void DisplayMenu() {
 	system("cls");
@@ -281,6 +306,7 @@ void DisplayMenu() {
 		case 2: STATUS = HOW_TO_PLAY; break;
 		case 3: STATUS = DEVELOPERS; break;
 		case 4: STATUS = SETTINGS; break;
+		case 5: STATUS = SETTINGS; break;
 	}
 }
 //[----------------------------------------------------------------------------]
