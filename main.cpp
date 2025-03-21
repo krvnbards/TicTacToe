@@ -209,6 +209,38 @@ void DevelopersPage() {
 	cout << setw(76) << "|                 Kendrick Lanuza                  |" << endl;
 	cout << setw(76) << "|                  Jules Omambac                   |" << endl;
 	cout << setw(76) << "====================================================" << endl;
+
+	string choice;
+	while (1) {
+		//enter y - yes or n - no
+	cout << setw(57) << endl << "See developers description(y/n): ";
+	cin >> choice;
+	
+	if (choice == "Y" || choice == "y"){
+		cout << setw(47) << endl << "Name:   Kervin Bardilas" << endl;
+		cout << setw(35) << "Age:    Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(37) << "Motto:  Motto" << endl;
+				
+		cout << setw(47) << endl <<"Name:   Kendrick Lanuza" << endl;
+		cout << setw(35) << "Age:    Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(37) << "Motto:  Motto" << endl;
+				
+		cout << setw(43) << endl <<"Name: Jules Omambac" << endl;
+		cout << setw(32) << "Age: Age" << endl;
+		cout << setw(36) << "Gender: Male" << endl;
+		cout << setw(36) << "Motto: Motto" << endl;
+		break;
+	} else if (choice == "N" || choice == "n") {
+		cout << "Return to main menu!" << endl;
+		STATUS = MAINMENU;
+		break;
+	} else {
+		cout << setw(39) << "Invalid choice!" << endl;
+	}
+	
+	}
 	system("pause");
 	STATUS = MAINMENU;
 }
