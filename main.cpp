@@ -84,11 +84,12 @@ void ExitGame();
 void DevelopersArt();
 bool placeMarker(int slot);
 bool isDrawPossible();
-
+void Winner(int winner);
 
 void ResetGameSettings();
 
 int checkWinner();
+
 
 //[-----------------------------------------------------------------------------]
 
