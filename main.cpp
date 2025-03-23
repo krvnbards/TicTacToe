@@ -85,6 +85,7 @@ void DevelopersArt();
 bool placeMarker(int slot);
 bool isDrawPossible();
 
+void Winner(int winner);
 
 void ResetGameSettings();
 
@@ -758,4 +759,5 @@ bool placeMarker(int slot) {
     }
     return false;
 }
+
 //[----------------------------------------------------------------------------]
