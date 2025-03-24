@@ -3,8 +3,12 @@
 #include <sstream>
 #include <windows.h>
 #include <limits>
+#include <climits>
 #include <cstdlib>
 #include <ctime> 
+
+#define SPACE "                    "
+#define SPACE2 "     "
 
 using namespace std;
 
@@ -47,7 +51,7 @@ int playerScore[2];
 int autoPause = 0; // Pause = 0 Pause = 1
 
 
-string boardColor = "A"; // Default green
+string boardColor = "7"; // Default white
 string backgroundColor = "0"; // Default black background
 string colo = "color ";
 string finalCombined = colo + backgroundColor + boardColor;
@@ -105,13 +109,12 @@ void Pause(int ms);
 void clearKeyboardBuffer();
 
 void aiRandomMove();
+int evaluate();
+bool availableMoves();
+int minimax(int depth, bool isMaximizing);
+void aiMiniMax();
 
 //[-----------------------------------------------------------------------------]
-
-/* sometimes dili ma end ang round bisag nadaug na ang isa ka player,
-   kailangan pun on ang nine boxes sa board para ma win.
-*/
-
 int main() {
 	system(charColor);
 	srand(time(0));
@@ -132,7 +135,7 @@ int main() {
 
 				int choice;
 				while(GAME_DIFFICULTY < 1) {
-					cout << setw(50) << "\nSelect Computer Difficulty\n\n[1] Easy\n[2] Medium (not available)\n[3] Hard (not available)\nEnter your choice: " << endl;
+					cout << setw(50) << "\n" SPACE "Please select the level of difficulty for Computer:\n\n" SPACE "[1] Easy\n" SPACE "[2] Medium (not available)\n" SPACE "[3] Hard\n" SPACE "Enter your choice: ";
 					cin >> choice;
 					
 					if(choice < 1 || choice > 3 || cin.fail()) {
@@ -152,7 +155,7 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 
-				cout << setw(50) << "\n\nEnter name for Player 1: ";
+				cout << setw(50) << "\n\n" SPACE "Enter name for Player 1: ";
 				cin >> PlayerName[0];
 
 				if(GAME_MODE == 1) {
@@ -168,7 +171,7 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 
-				cout << setw(50) << "\n\nEnter name for Player 2: ";
+				cout << setw(50) << "\n\n" SPACE "Enter name for Player 2: ";
 				cin >> PlayerName[1];
 
 				STATUS = GAME_SELECT_ROUNDS;
@@ -219,7 +222,7 @@ int main() {
 						break;
 					}
 					else if(choice == 'N' || choice == 'n') {
-						cout << setw(39) << "Returning to main menu... Please wait.." << endl;
+						cout << setw(55) << "Returning to main menu... Please wait.." << endl;
 						//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 						Pause(2000);
 						Reset();
@@ -364,6 +367,106 @@ void TicTacToeArt() {
 	cout << "________________________________________________________________________________________________________________________\n";
 }
 
+int evaluate() {
+    char p1 = playerSymbols[0]; 
+    char p2 = playerSymbols[1]; 
+
+    
+    for (int i = 0; i < 3; i++) {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+            if (board[i][0] == p2) return 1;  
+            if (board[i][0] == p1) return -1; 
+        }
+        if (board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
+            if (board[0][i] == p2) return 1;
+            if (board[0][i] == p1) return -1;
+        }
+    }
+
+    
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
+        if (board[0][0] == p2) return 1;
+        if (board[0][0] == p1) return -1;
+    }
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
+        if (board[0][2] == p2) return 1;
+        if (board[0][2] == p1) return -1;
+    }
+
+    return 0;
+}
+
+bool availableMoves() {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] == ' ') return true;
+        }
+    }
+    return false;
+}
+
+int minimax(int depth, bool isMaximizing) {
+    int score = evaluate();
+
+    
+    if (score == 1) return 10 - depth;
+    
+    if (score == -1) return depth - 10;
+    
+    if (!availableMoves()) return 0;
+
+    if (isMaximizing) { // AI's turn
+        int best = INT_MIN;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == ' ') { 
+                    board[i][j] = playerSymbols[1]; 
+                    best = max(best, minimax(depth + 1, false));
+                    board[i][j] = ' '; 
+                }
+            }
+        }
+        return best;
+    } else { 
+        int best = INT_MAX;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == ' ') {
+                    board[i][j] = playerSymbols[0]; 
+                    best = min(best, minimax(depth + 1, true));
+                    board[i][j] = ' '; 
+                }
+            }
+        }
+        return best;
+    }
+}
+
+void aiMiniMax() {
+    int bestVal = INT_MIN;
+    int bestRow = -1, bestCol = -1;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] == ' ') {
+                board[i][j] = playerSymbols[1]; 
+                int moveVal = minimax(0, false);
+                board[i][j] = ' '; 
+
+                if (moveVal > bestVal) {
+                    bestRow = i;
+                    bestCol = j;
+                    bestVal = moveVal;
+                }
+            }
+        }
+    }
+
+    if (bestRow != -1 && bestCol != -1) {
+        board[bestRow][bestCol] = playerSymbols[1]; // AI places best move
+    }
+}
+
 void StartGame() {
 
 	DisplayBoard();
@@ -382,7 +485,11 @@ void StartGame() {
 		if(GAME_MODE == 2 && currentPlayer == 2) {
 			cout << endl <<  setw(21) << PlayerName[currentPlayer-1] << " (" << playerSymbols[currentPlayer-1] << ") turn to move.. please wait.." << endl;
 			Pause(1500);
-			aiRandomMove();
+			if(GAME_DIFFICULTY == 1)
+				aiRandomMove();
+			else if(GAME_DIFFICULTY == 3)
+				aiMiniMax();
+				
 			DisplayBoard();
 
 	        int winner = checkWinner();
@@ -394,7 +501,7 @@ void StartGame() {
 			if (isDrawPossible()) {
 				clearBoard();
 				//StartGame();
-	            cout << setw(39) << "This round ends in a draw! No more possible wins.\n";
+	            cout << "" SPACE "This round ends in a draw! No more possible wins.\n";
 	            Pause(3000);
 	            return;
 	    	}
@@ -434,7 +541,7 @@ void StartGame() {
 
 			clearBoard();
 			//StartGame();
-            cout << setw(39) << "This round ends in a draw! No more possible wins.\n";
+            cout << "\n" SPACE "This round ends in a draw! No more possible wins.\n";
             Pause(3000);
             return;
     	}
@@ -454,7 +561,7 @@ void SelectMode() {
 	while(GAME_MODE < 0) {
 		system("cls");
 		TicTacToeArt();
-		cout << "\n[0] Back\n[1] Player vs Player\n[2] Player vs Computer\n\nEnter your choice: ";
+		cout << "\n                    [0] Back\n                    [1] Player vs Player\n                    [2] Player vs Computer\n\n                    Enter your choice: ";
 		cin >> GAME_MODE;
 
 
@@ -517,7 +624,7 @@ void SelectRounds() {
 		TicTacToeArt();
 
 
-		cout << setw(50) << "\n[1] 3 Rounds\n[2] 5 Rounds\n[3] 7 Rounds\n(Soon more rounds/custom)\nEnter your choice: ";
+		cout << "\n" SPACE "[1] 3 Rounds\n" SPACE "[2] 5 Rounds\n" SPACE "[3] 7 Rounds\n" SPACE "(Soon more rounds/custom)\n" SPACE "Enter your choice:";
 		cin >> GAME_ROUNDS;
 
 		if(GAME_ROUNDS < 1 || GAME_ROUNDS > 3 || cin.fail()) {
@@ -617,19 +724,19 @@ void DevelopersPage() {
 void How_To_Play() {
 	system("cls");
 	TicTacToeArt();
-	cout << "\n\tHow to Play Tic-Tac-Toe" << endl;
-    cout << "\n1. The game is played on a 3x3 grid." << endl;
-    cout << "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
-    cout << "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
-    cout << "4. The first player to get three of their marks in a row (vertically, horizontally, or diagonally) wins the round." << endl;
-    cout << "5. If all 9 spaces are filled and no player has three in a row, the round is a draw." << endl;
-    cout << "6. The game continues until all selected rounds are completed." << endl;
+	cout << "\n" SPACE2 "How to Play Tic-Tac-Toe" << endl;
+    cout << "\n" SPACE2 "1. The game is played on a 3x3 grid." << endl;
+    cout << "" SPACE2 "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
+    cout << "" SPACE2 "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
+    cout << "" SPACE2 "4. The first player to get three of their marks in a row (vertically, horizontally, or diagonally) wins the round." << endl;
+    cout << "" SPACE2 "5. If all 9 spaces are filled and no player has three in a row, the round is a draw." << endl;
+    cout << "" SPACE2 "6. The game continues until all selected rounds are completed." << endl;
 
-    cout << "\nControls:" << endl;
-    cout << "- Enter the number (1 to 9) corresponding to the space you want to mark." << endl;
-    cout << "- Invalid moves (selecting an already occupied space) will result on giving you a chance to take another move." << endl;
+    cout << "\n" SPACE2 "Controls:" << endl;
+    cout << "" SPACE2 "- Enter the number (1 to 9) corresponding to the space you want to mark." << endl;
+    cout << "" SPACE2 "- Invalid moves (selecting an already occupied space) will result on giving you a chance to take another move." << endl;
 
-    cout << "\nHave fun and enjoy the game!\n" << endl;
+    cout << "\n" SPACE2 "Have fun and enjoy the game!\n" << endl;
 	system("pause");
 	STATUS = MAINMENU;
 }
@@ -654,8 +761,8 @@ ___               _
 void ExitGame() {
     system("cls");
     TicTacToeArt();
-    cout << "\nThank you for playing Tic-Tac-Toe!" << endl;
-    cout << "\nExiting the game..." << endl;
+    cout << setw(55) << "\nThank you for playing Tic-Tac-Toe!" << endl;
+    cout << setw(55) << "\nExiting the game..." << endl;
     system("pause");
 	STATUS = MAINMENU;
 	exit(0);
@@ -665,16 +772,16 @@ void ExitGame() {
 void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok najud siya
 	system("cls");
 	TicTacToeArt();
-    cout << "\nEnter symbol for Player 1: ";
+    cout << setw(55) << "\nEnter symbol for Player 1: ";
 
     cin >> playerSymbols[0];
     //cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    cout << "\nEnter symbol for Player 2: ";
+    cout << setw(55) << "\nEnter symbol for Player 2: ";
     cin >> playerSymbols[1];
 
 
-    cout << "Player symbols updated!" << endl;
+    cout << setw(55) << "Player symbols updated!" << endl;
     Pause(2000);
     STATUS=SETTINGS;
 }
@@ -684,13 +791,14 @@ void ChangeBoardColor() { // if other color (light gray, etc.) na ang background
 	system("cls");
 	TicTacToeArt();       // tarungon ra nya na nako - jules
     int colorChoice;
-    cout << "\nChoose a board color:" << endl;
-    cout << "\n1. Blue \n2. Green \n3. Aqua \n4. Red \n5. Purple \n6. Yellow \n7. Light Gray \n8. Light Green \n9. Light Aqua \n10. Light Red " << endl;
-    cout << "Enter your choice (1-10): ";
+    cout << endl << setw(55) << "Choose a board color:" << endl;
+    cout << setw(43) << "[0] Black" << endl << setw(42) << "[1] Blue" << endl << setw(43) << "[2] Green" << endl << setw(42) << "[3] Aqua" << endl << setw(41) << "[4] Red" << endl << setw(44) << "[5] Purple" << endl << setw(45) << "[6] Yellow " << endl << setw(48) << "[7] Light Gray" << endl << setw(49) << "[8] Light Green" << endl << setw(48) << "[9] Light Aqua" << endl << setw(49) << "[10] Light Red " << endl;
+    cout << setw(60) << "Enter your choice (1-10): ";
     cin >> colorChoice;
 
-    if(colorChoice < 1 || colorChoice > 10 || cin.fail()) {
-    	cout << "Invalid choice. Defaulting to black." << endl;
+    if(colorChoice < 0 || colorChoice > 10 || cin.fail()) {
+    	boardColor = "7";
+    	cout << setw(55) << "Invalid choice. Defaulting to white." << endl;
     	Pause(700);
     	cin.clear();
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -711,7 +819,7 @@ void ChangeBoardColor() { // if other color (light gray, etc.) na ang background
         case 8: boardColor = "a"; break;
         case 9: boardColor = "b"; break;
         case 10: boardColor = "c"; break;
-        default: cout << "Invalid choice. Defaulting to green." << endl; boardColor = "0"; break;
+        default: boardColor = "0"; break;
     }
 
     cout << "\nBoard color updated!" << endl;
@@ -726,15 +834,16 @@ void ChangeBoardColor() { // if other color (light gray, etc.) na ang background
 void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice na color e add
 	system("cls");
 	TicTacToeArt();
-	int choice;
-    cout << "\nChoose a board color:" << endl;
-    cout << "\n1. Blue \n2. Green \n3. Aqua \n4. Red \n5. Purple \n6. Yellow \n7. Light Gray \n8. Light Green \n9. Light Aqua \n10. Light Red " << endl;
-    cout << "Enter your choice (1-10): ";
-    cin >> choice;
+	int colorChoice;
+    cout << endl << setw(55) << "Choose a board color:" << endl;
+    cout << setw(43) << "[0] Black" << endl << setw(42) << "[1] Blue" << endl << setw(43) << "[2] Green" << endl << setw(42) << "[3] Aqua" << endl << setw(41) << "[4] Red" << endl << setw(44) << "[5] Purple" << endl << setw(45) << "[6] Yellow " << endl << setw(48) << "[7] Light Gray" << endl << setw(49) << "[8] Light Green" << endl << setw(48) << "[9] Light Aqua" << endl << setw(49) << "[10] Light Red " << endl;
+    cout << setw(60) << "Enter your choice (1-10): ";
+    cin >> colorChoice;
 
-    if(choice < 1 || choice > 10 || cin.fail()) {
+    if(colorChoice < 1 || colorChoice > 10 || cin.fail()) {
     	//cin.clear();
     	cout << "Invalid choice. Defaulting to black." << endl;
+    	backgroundColor = "0";
     	Pause(700);
     	cin.clear();
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -745,7 +854,7 @@ void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice n
 	cin.clear();
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    switch(choice) {
+    switch(colorChoice) {
 	    case 1: backgroundColor = "1"; break;
 	    case 2: backgroundColor = "a"; break;
 	    case 3: backgroundColor = "3"; break;
@@ -756,7 +865,6 @@ void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice n
 	    case 8: backgroundColor = "a"; break;
 	    case 9: backgroundColor = "b"; break;
 	    case 10: backgroundColor = "c"; break;
-	    default: cout << "Invalid choice. Defaulting to green." << endl; backgroundColor = "0"; break;
     }
 
     finalCombined = colo + backgroundColor + boardColor;
@@ -818,18 +926,18 @@ void SettingsMenu() { // Not complete, but some progress made
     TicTacToeArt();
     int choice;
 
-    cout << "\nSettings Menu" << endl;
-    cout << "1. Change Player Symbols" << endl;
-    cout << "2. Change Board Color" << endl;
-    cout << "3. Change Background " << endl;
-    cout << "4. Exit Settings" << endl;
-    cout << "\nEnter your choice: ";
+    cout << "\n" SPACE2 "Settings Menu" << endl;
+    cout << "" SPACE2 "1. Change Player Symbols" << endl;
+    cout << "" SPACE2 "2. Change Board Color" << endl;
+    cout << "" SPACE2 "3. Change Background " << endl;
+    cout << "" SPACE2 "4. Exit Settings" << endl;
+    cout << "\n" SPACE2 "Enter your choice: ";
     cin >> choice;
 
     if(choice < 1 || choice > 4 || cin.fail()) {
 
 	    //STATUS = MAINMENU;
-	    cout << "Invalid choice. Please enter a valid choice." << endl;
+	    cout << "" SPACE2 "Invalid choice. Please enter a valid choice." << endl;
 
 	    cin.clear();
 	    cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -856,38 +964,31 @@ void DisplayMenu() {
 
 	int status=-1;
 	
-	string art = R"(
-  _   ____  _                ____                      
- / | |  _ \| | __ _ _   _   / ___| __ _ _ __ ___   ___ 
- | | | |_) | |/ _` | | | | | |  _ / _` | '_ ` _ \ / _ \
- | | |  __/| | (_| | |_| | | |_| | (_| | | | | | |  __/
- |_| |_|   |_|\__,_|\__, |  \____|\__,_|_| |_| |_|\___|
-                    |___/                              
-  ____    _   _                  _____           ____  _             
- |___ \  | | | | _____      __  |_   _|__       |  _ \| | __ _ _   _ 
-   __) | | |_| |/ _ \ \ /\ / /____| |/ _ \ _____| |_) | |/ _` | | | |
-  / __/  |  _  | (_) \ V  V /_____| | (_) |_____|  __/| | (_| | |_| |
- |_____| |_| |_|\___/ \_/\_/      |_|\___/      |_|   |_|\__,_|\__, |
-                                                               |___/ 
-  _____   ____                 _                           
- |___ /  |  _ \  _____   _____| | ___  _ __   ___ _ __ ___ 
-   |_ \  | | | |/ _ \ \ / / _ \ |/ _ \| '_ \ / _ \ '__/ __|
-  ___) | | |_| |  __/\ V /  __/ | (_) | |_) |  __/ |  \__ \
- |____/  |____/ \___| \_/ \___|_|\___/| .__/ \___|_|  |___/
-                                      |_|                                                  
-  _  _     ____       _   _   _                 
- | || |   / ___|  ___| |_| |_(_)_ __   __ _ ___ 
- | || |_  \___ \ / _ \ __| __| | '_ \ / _` / __|
- |__   _|  ___) |  __/ |_| |_| | | | | (_| \__ \
-    |_|   |____/ \___|\__|\__|_|_| |_|\__, |___/
-                                      |___/                                 
-  ____    _____      _ _   
- | ___|  | ____|_  _(_) |_ 
- |___ \  |  _| \ \/ / | __|
-  ___) | | |___ >  <| | |_ 
- |____/  |_____/_/\_\_|\__|
-                           
-							          
+	string art = R"(                                             
+ ___      _____ _            _____               
+|_  |    |  _  | |___ _ _   |   __|___ _____ ___ 
+ _| |_   |   __| | .'| | |  |  |  | .'|     | -_|
+|_____|  |__|  |_|__,|_  |  |_____|__,|_|_|_|___|
+                     |___|                                                                      
+ ___    _____              _          _____ _         
+|_  |  |  |  |___ _ _ _   | |_ ___   |  _  | |___ _ _ 
+|  _|  |     | . | | | |  |  _| . |  |   __| | .'| | |
+|___|  |__|__|___|_____|  |_| |___|  |__|  |_|__,|_  |
+                                                 |___|                                           
+ ___    ____              _                     
+|_  |  |    \ ___ _ _ ___| |___ ___ ___ ___ ___ 
+|_  |  |  |  | -_| | | -_| | . | . | -_|  _|_ -|
+|___|  |____/|___|\_/|___|_|___|  _|___|_| |___|
+                               |_|                                           
+ ___    _____     _   _   _             
+| | |  |   __|___| |_| |_|_|___ ___ ___ 
+|_  |  |__   | -_|  _|  _| |   | . |_ -|
+  |_|  |_____|___|_| |_| |_|_|_|_  |___|
+                               |___|                      
+ ___    _____     _ _   
+|  _|  |   __|_ _|_| |_ 
+|_  |  |   __|_'_| |  _|
+|___|  |_____|_,_|_|_|  	          
 	)";
 
 	istringstream stream(art);
@@ -897,14 +998,14 @@ void DisplayMenu() {
     	ios init(NULL);
     	init.copyfmt(cout);
     	
-        std::cout << std::setw(25) << right << line << std::endl; // Adjust 50 for alignment
+        std::cout << " " SPACE" " << right << line << std::endl; // Adjust 50 for alignment
         
         cout.copyfmt(init);
     }
 
 
 	//cout << "[1] Play Game\n[2] How to Play\n[3] Developers\n[4] Settings\n[5] Exit\n\n" << endl;
-	cout << "Enter choice: ";
+	cout << "" SPACE "   Enter your choice: ";
 	cin >> status;
 
 	if(status < 1 || status > 5 || cin.fail()) {
