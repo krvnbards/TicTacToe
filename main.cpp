@@ -1,11 +1,16 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <iomanip>
 #include <sstream>
+//#define _WIN32_WINNT 0x0500
 #include <windows.h>
+#include <thread>
 #include <limits>
 #include <climits>
 #include <cstdlib>
 #include <ctime> 
+#include <mutex>
 
 #define SPACE "                    "
 #define SPACE2 "     "
@@ -35,7 +40,7 @@ int currentPlayer;
 
 char marker[] = {'O', 'X'};
 
-char playerSymbols[2] = {'O', 'X'}; // changed marker to this para sa SettingsMenu()
+char playerSymbols[2]; // changed marker to this para sa SettingsMenu()
 
 
 int firstPlayer = 2;
@@ -51,8 +56,8 @@ int playerScore[2];
 int autoPause = 0; // Pause = 0 Pause = 1
 
 
-string boardColor = "7"; // Default white
-string backgroundColor = "0"; // Default black background
+string boardColor; // Default white
+string backgroundColor; // Default black background
 string colo = "color ";
 string finalCombined = colo + backgroundColor + boardColor;
 const char *charColor = finalCombined.c_str();
@@ -108,14 +113,43 @@ int checkWinner();
 void Pause(int ms);
 void clearKeyboardBuffer();
 
-void aiRandomMove();
+void aiEasyMove();
 int evaluate();
 bool availableMoves();
 int minimax(int depth, bool isMaximizing);
 void aiMiniMax();
 
+void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], const std::string& filename);
+void loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], const std::string& filename);
+
+std::mutex consoleMutex;
+
+void DisplayConsoleSize();
+void SetConsoleSize(int width, int height);
+
+
 //[-----------------------------------------------------------------------------]
 int main() {
+	boardColor = "7";
+	backgroundColor = "0";
+	finalCombined = colo + backgroundColor + boardColor;
+	charColor = finalCombined.c_str();
+	string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
+
+    // Load settings from file
+    string loadedBoardColor;
+    string loadedBackgroundColor;
+    char loadedPlayerSymbols[2];
+    loadSettings(loadedBoardColor, loadedBackgroundColor, loadedPlayerSymbols, filename);
+    
+    boardColor = loadedBoardColor;
+	backgroundColor = loadedBackgroundColor;
+	finalCombined = colo + backgroundColor + boardColor;
+	charColor = finalCombined.c_str();
+	
+	playerSymbols[0] = loadedPlayerSymbols[0];
+	playerSymbols[1] = loadedPlayerSymbols[1];
+    
 	system(charColor);
 	srand(time(0));
 	ResetGameSettings();
@@ -155,8 +189,22 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 
-				cout << setw(50) << "\n\n" SPACE "Enter name for Player 1: ";
-				cin >> PlayerName[0];
+				cout << endl << endl;
+			 	cout << SPACE " ________________________________________________________________________ " << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|                   Please enter name for Player 1                       |" << endl;
+			    cout << SPACE "|________________________________________________________________________|" << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|________________________________________________________________________|" << endl;
+			    
+			    
+			    cout << "\033[2A";  
+			    cout << "\033[46C"; 
+				//cin >> PlayerName[0];
+			    getline(cin >> ws, PlayerName[0]);
+			    
+			    //cin >> PlayerName[0];
 
 				if(GAME_MODE == 1) {
 					STATUS = GAME_ENTER_NAME2;
@@ -171,8 +219,21 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 
-				cout << setw(50) << "\n\n" SPACE "Enter name for Player 2: ";
-				cin >> PlayerName[1];
+				cout << setw(50) << "\n\n";
+				cout << endl << endl;
+			 	cout << SPACE " ________________________________________________________________________ " << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|                   Please enter name for Player 2                       |" << endl;
+			    cout << SPACE "|________________________________________________________________________|" << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|                                                                        |" << endl;
+			    cout << SPACE "|________________________________________________________________________|" << endl;
+			    
+			    
+			    cout << "\033[2A";  
+			    cout << "\033[46C"; 
+				//cin >> PlayerName[0];
+			    getline(cin >> ws, PlayerName[1]);
 
 				STATUS = GAME_SELECT_ROUNDS;
 				break;
@@ -235,7 +296,9 @@ int main() {
 				break;
 			}
 		}
+		//resizeThread.join();
 	}
+
 	return 1;
 }
 
@@ -249,7 +312,7 @@ void Reset() {
 	ResetGameSettings();
 }
 
-void aiRandomMove() {
+void aiEasyMove() {
     int empty[9][2]; 
     int count = 0;
 
@@ -274,6 +337,92 @@ void aiRandomMove() {
     }
 }
 
+#include <iostream>
+#include <windows.h>
+#include <thread>
+#include <mutex>
+
+
+void DisplayConsoleSize() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    int prevWidth = 0, prevHeight = 0;
+
+    while (true) {
+        GetConsoleScreenBufferInfo(hConsole, &csbi);
+        int consoleWidth = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        int consoleHeight = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
+        if (consoleWidth != prevWidth || consoleHeight != prevHeight) {
+            std::lock_guard<std::mutex> lock(consoleMutex);
+
+            // Save current cursor position
+            CONSOLE_SCREEN_BUFFER_INFO currentInfo;
+            GetConsoleScreenBufferInfo(hConsole, &currentInfo);
+            COORD savedPosition = currentInfo.dwCursorPosition;
+
+            // Display console size at the top
+            COORD sizePosition = {0, 0};
+            SetConsoleCursorPosition(hConsole, sizePosition);
+            //std::cout << "Console Size: " << consoleWidth << "x" << consoleHeight << "     ";
+            //exit(0);
+
+            // Restore cursor position
+            SetConsoleCursorPosition(hConsole, savedPosition);
+
+            prevWidth = consoleWidth;
+            prevHeight = consoleHeight;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+}
+
+void SetConsoleSize(int width, int height) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD bufferSize = { (SHORT)width, (SHORT)height };
+    SMALL_RECT windowSize = { 0, 0, (SHORT)(width - 1), (SHORT)(height - 1) };
+
+    // Set the screen buffer size
+    if (!SetConsoleScreenBufferSize(hConsole, bufferSize)) {
+        std::cerr << "Failed to set buffer size. Error: " << GetLastError() << std::endl;
+        return;
+    }
+
+    // Set the window size
+    if (!SetConsoleWindowInfo(hConsole, TRUE, &windowSize)) {
+        std::cerr << "Failed to set window size. Error: " << GetLastError() << std::endl;
+        return;
+    }
+
+    std::cout << "Console size set to " << width << "x" << height << std::endl;
+}
+
+void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], const std::string& filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        file << boardColor << std::endl;
+        file << backgroundColor << std::endl;
+        file << playerSymbols[0] << std::endl;
+        file << playerSymbols[1] << std::endl;
+        std::cout << "Settings saved successfully!" << std::endl;
+    } else {
+        std::cerr << "Unable to open file for saving." << std::endl;
+    }
+}
+
+void loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], const std::string& filename) {
+    std::ifstream file(filename);
+    if (file.is_open()) {
+        std::getline(file, boardColor);
+        std::getline(file, backgroundColor);
+        file >> playerSymbols[0];
+        file >> playerSymbols[1];
+        std::cout << "Settings loaded successfully!" << std::endl;
+    } else {
+        std::cerr << "Unable to open file for loading." << std::endl;
+    }
+}
+
 void Winner(int winner) {
 	int time=3000;
 	while(time > 0)
@@ -286,7 +435,6 @@ void Winner(int winner) {
 		cout << setw(55) << "SCORE BREAKDOWN" << endl;
 		cout << setw(50) << PlayerName[0] << " - " << playerScore[0] << endl;
 		cout << setw(50) << PlayerName[1] << " - " << playerScore[1] << endl;
-
 		cout << setw(50) << "Please wait " << time/1000 << " seconds..." << endl;
 		Sleep(1000);
 		clearKeyboardBuffer();
@@ -302,9 +450,7 @@ void Pause(int ms) {
 	if(autoPause == 1) {
 		system("pause");
 	} else {
-		Sleep(ms); // 3-second delay
-	    //cin.clear();
-	    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		Sleep(ms); 
 	    clearKeyboardBuffer();
 	}
 }
@@ -477,6 +623,7 @@ void StartGame() {
 
 	int slot;
 	firstPlayer = currentPlayer;
+	int confirm = 0;
 	
 	//if(currentPlayer == 1 && GAME_MODE == 1)
 	
@@ -486,7 +633,7 @@ void StartGame() {
 			cout << endl <<  setw(21) << PlayerName[currentPlayer-1] << " (" << playerSymbols[currentPlayer-1] << ") turn to move.. please wait.." << endl;
 			Pause(1500);
 			if(GAME_DIFFICULTY == 1)
-				aiRandomMove();
+				aiEasyMove();
 			else if(GAME_DIFFICULTY == 3)
 				aiMiniMax();
 				
@@ -513,7 +660,35 @@ void StartGame() {
 		cout << endl <<  setw(21) << PlayerName[currentPlayer-1] << " (" << playerSymbols[currentPlayer-1] << ") turn to play, place to mark slot (1-9): ";
 		cin >> slot;
 
-		if (slot < 1 || slot > 9 || !placeMarker(slot) || cin.fail()) {
+
+		if (slot < 0 || slot > 9 || !placeMarker(slot) || cin.fail()) {
+			
+			if(slot == 0) {
+				char choice;
+				while(choice != 'y' || choice != 'Y' || choice != 'N' || choice != 'n') {
+					
+					cout << SPACE "Do you want to return to the main menu? (y/n): ";
+					cin >> choice;
+					
+					if(choice == 'y') {
+						cout << SPACE "Returning to main menu! Please wait..." << endl;
+						confirm = 1;
+						break;
+					}
+					else if(choice == 'n') {
+						cout << SPACE "Okay... going back to the game.. please wait...";
+			            cin.clear();
+						cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			            i--; // Retain the turn
+			            Pause(1500);
+			            break;
+					}
+				}
+				if(choice == 'y' || choice == 'Y')
+					break;
+				else continue;
+			}
+			
             cout << setw(39) << "Invalid move! Try again.\n";
             cin.clear();
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -548,6 +723,14 @@ void StartGame() {
 
 		if(currentPlayer == 1) currentPlayer = 2;
         else currentPlayer = 1;
+	}
+	
+	if(confirm == 1) {
+    	Pause(2000);
+		Reset();
+		ResetGameSettings();
+		STATUS = MAINMENU;
+		return;	
 	}
 }
 
@@ -651,7 +834,8 @@ void DisplayBoard() {
 
 	system("cls");
 	TicTacToeArt();
-	cout << "\n\n";
+	int confirm=0;
+	cout << endl << setw(110) << "[0] Back" << endl;
 	//int maxLength = max(PlayerName[0].length(), PlayerName[1].length());
 
 	cout << setw(23) << "Score:\n";
@@ -742,13 +926,13 @@ void How_To_Play() {
 }
 
 void DevelopersArt() {
-	string DevelopersArt =	 R"(
-___               _
-     /   \_____   _____| | ___  _ __   ___ _ __ ___
+	string DevelopersArt =	 R"(                                            
+      ___               _                           
+     /   \_____   _____| | ___  _ __   ___ _ __ ___ 
     / /\ / _ \ \ / / _ | |/ _ \| '_ \ / _ | '__/ __|
    / /_/|  __/\ V |  __| | (_) | |_) |  __| |  \__ \
   /___,' \___| \_/ \___|_|\___/| .__/ \___|_|  |___/
-                               |_|
+                               |_|                  
 	)";
 
 	istringstream stream(DevelopersArt);
@@ -782,99 +966,95 @@ void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok na
 
 
     cout << setw(55) << "Player symbols updated!" << endl;
+    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
+    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
     Pause(2000);
     STATUS=SETTINGS;
 }
 
-void ChangeBoardColor() { // if other color (light gray, etc.) na ang background, then e change ang board color, ma reset to black ang background
-
-	system("cls");
-	TicTacToeArt();       // tarungon ra nya na nako - jules
+void ChangeBoardColor() {
+    system("cls");
+    TicTacToeArt();
     int colorChoice;
-    cout << endl << setw(55) << "Choose a board color:" << endl;
-    cout << setw(43) << "[0] Black" << endl << setw(42) << "[1] Blue" << endl << setw(43) << "[2] Green" << endl << setw(42) << "[3] Aqua" << endl << setw(41) << "[4] Red" << endl << setw(44) << "[5] Purple" << endl << setw(45) << "[6] Yellow " << endl << setw(48) << "[7] Light Gray" << endl << setw(49) << "[8] Light Green" << endl << setw(48) << "[9] Light Aqua" << endl << setw(49) << "[10] Light Red " << endl;
-    cout << setw(60) << "Enter your choice (1-10): ";
+    cout << endl << SPACE "Choose a board color:" << endl;
+    cout << SPACE "[0] Black" << endl << SPACE "[1] Soft Blush (#F2D7D9)" << endl << SPACE "[2] Pale Mint (#D5EED1)" << endl << SPACE "[3] Powder Blue (#D4E4F7)" << endl << SPACE << "[4] Lavender Mist (#E3DDF5)" << endl << SPACE "[5] Peach Fuzz (#FBE1C8)" << endl;
+    cout << setw(60) << "Enter your choice (1-5): ";
     cin >> colorChoice;
 
-    if(colorChoice < 0 || colorChoice > 10 || cin.fail()) {
-    	boardColor = "7";
-    	cout << setw(55) << "Invalid choice. Defaulting to white." << endl;
-    	Pause(700);
-    	cin.clear();
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
-		STATUS = SETTINGS;
-    	return;
-	}
+    if(colorChoice < 0 || colorChoice > 5 || cin.fail()) {
+        boardColor = "7";
+        cout << setw(55) << "Invalid choice. Defaulting to white." << endl;
+        Pause(700);
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        STATUS = SETTINGS;
+        return;
+    }
 
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     switch(colorChoice) {
-        case 1: boardColor = "1"; break;
-        case 2: boardColor = "a"; break;
-        case 3: boardColor = "3"; break;
-        case 4: boardColor = "4"; break;
-        case 5: boardColor = "5"; break;
-        case 6: boardColor = "6"; break;
-        case 7: boardColor = "8"; break;
-        case 8: boardColor = "a"; break;
-        case 9: boardColor = "b"; break;
-        case 10: boardColor = "c"; break;
+        case 1: boardColor = "d"; break; // Soft Blush (#F2D7D9)
+        case 2: boardColor = "a"; break; // Pale Mint (#D5EED1)
+        case 3: boardColor = "b"; break; // Powder Blue (#D4E4F7)
+        case 4: boardColor = "c"; break; // Lavender Mist (#E3DDF5)
+        case 5: boardColor = "e"; break; // Peach Fuzz (#FBE1C8)
         default: boardColor = "0"; break;
     }
 
     cout << "\nBoard color updated!" << endl;
     finalCombined = colo + backgroundColor + boardColor;
-	charColor = finalCombined.c_str();
+    charColor = finalCombined.c_str();
     system(charColor);
+    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
+    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
     Pause(3000);
-    STATUS=SETTINGS;
+    STATUS = SETTINGS;
 }
 
 
-void ChangeBackgroundColor() { // not the final colors, tingali napay mas nice na color e add
-	system("cls");
-	TicTacToeArt();
-	int colorChoice;
+void ChangeBackgroundColor() {
+    system("cls");
+    TicTacToeArt();
+    int colorChoice;
     cout << endl << setw(55) << "Choose a board color:" << endl;
-    cout << setw(43) << "[0] Black" << endl << setw(42) << "[1] Blue" << endl << setw(43) << "[2] Green" << endl << setw(42) << "[3] Aqua" << endl << setw(41) << "[4] Red" << endl << setw(44) << "[5] Purple" << endl << setw(45) << "[6] Yellow " << endl << setw(48) << "[7] Light Gray" << endl << setw(49) << "[8] Light Green" << endl << setw(48) << "[9] Light Aqua" << endl << setw(49) << "[10] Light Red " << endl;
-    cout << setw(60) << "Enter your choice (1-10): ";
+    cout << SPACE "[0] Black\n" << SPACE "[1] Dusty Mauve\n" << SPACE "[2] Deep Sage\n" << SPACE "[3] Stormy Blue\n" << SPACE "[4] Charcoal Lavender\n" << SPACE "[5] Slate Gray\n" << endl; 
+    cout << setw(60) << "Enter your choice (1-5): ";
     cin >> colorChoice;
 
-    if(colorChoice < 1 || colorChoice > 10 || cin.fail()) {
-    	//cin.clear();
-    	cout << "Invalid choice. Defaulting to black." << endl;
-    	backgroundColor = "0";
-    	Pause(700);
-    	cin.clear();
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
-		STATUS = SETTINGS;
-    	return;
-	}
+    if(colorChoice < 1 || colorChoice > 5 || cin.fail()) {
+        cout << "Invalid choice. Defaulting to black." << endl;
+        backgroundColor = "0";
+        Pause(700);
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        STATUS = SETTINGS;
+        return;
+    }
 
-	cin.clear();
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     switch(colorChoice) {
-	    case 1: backgroundColor = "1"; break;
-	    case 2: backgroundColor = "a"; break;
-	    case 3: backgroundColor = "3"; break;
-	    case 4: backgroundColor = "4"; break;
-	    case 5: backgroundColor = "5"; break;
-	    case 6: backgroundColor = "6"; break;
-	    case 7: backgroundColor = "8"; break;
-	    case 8: backgroundColor = "a"; break;
-	    case 9: backgroundColor = "b"; break;
-	    case 10: backgroundColor = "c"; break;
+        case 1: backgroundColor = "5"; break; // Dusty Mauve
+        case 2: backgroundColor = "2"; break; // Deep Sage
+        case 3: backgroundColor = "3"; break; // Stormy Blue
+        case 4: backgroundColor = "6"; break; // Charcoal Lavender
+        case 5: backgroundColor = "7"; break; // Muted Teal
+        default: backgroundColor = "0"; break;
     }
 
     finalCombined = colo + backgroundColor + boardColor;
-	charColor = finalCombined.c_str();
+    charColor = finalCombined.c_str();
     system(charColor);
+    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
+    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
     cout << "\nBackground color changed!" << endl;
 
     Pause(700);
-    STATUS=SETTINGS;
+    STATUS = SETTINGS;
 }
+
 
 bool isDrawPossible() {
     char p1 = playerSymbols[0];
@@ -1039,4 +1219,4 @@ bool placeMarker(int slot) {
     return false;
 }
 
-//[----------------------------------------------------------------------------]
+//[----------------------------------------------------------------------------] 
