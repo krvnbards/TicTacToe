@@ -122,6 +122,10 @@ void ChangeBackgroundColor();
 
 int tawgako(string input);
 
+void PrintCharDelay ();
+void PrintCharDelay2 ();
+void PrintAnimation ();
+
 void aiEasyMove();
 int evaluate();
 bool availableMoves();
@@ -433,9 +437,7 @@ void DisplayConsoleSize() {
             // Display console size at the top
             COORD sizePosition = {0, 0};
             SetConsoleCursorPosition(hConsole, sizePosition);
-            //std::cout << "Console Size: " << consoleWidth << "x" << consoleHeight << "     ";
-            //exit(0);
-
+          
             // Restore cursor position
             SetConsoleCursorPosition(hConsole, savedPosition);
 
@@ -1059,46 +1061,94 @@ void DisplayBoard() {
     cout << SPACE << "     █     █     " << SPACE << "     █     █     \n";
 }
 
+void PrintCharDelay (string text, int delay = 50) {
+	for (char ch : text) {
+		cout << ch;
+		Sleep(delay);
+	}
+	cout << endl;
+}
+void PrintCharDelay2 (string text, int delay = 50) {
+	for (char ch : text) {
+		cout << ch;
+		Sleep(delay);
+	}
+}
+
+void PrintAnimation(const string lines[], int size, int delay = 500) {
+	for (int i = 0; i < size; i++) {
+        cout << lines[i] << endl;
+        this_thread::sleep_for(chrono::milliseconds(delay)); 
+	}
+}
+
 void DevelopersPage() {
 	system("cls");
 	TicTacToeArt();
 	DevelopersArt();
-	cout << SPACE SPACE2"▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl;
-	cout << SPACE SPACE2"█                                                  █" << endl;
-	cout << SPACE SPACE2"█                 Kervin Bardilas                  █" << endl;
-	cout << SPACE SPACE2"█                 Kendrick Lanuza                  █" << endl;
-	cout << SPACE SPACE2"█                  Jules Omambac                   █" << endl;
-	cout << SPACE SPACE2"█                                                  █" << endl;
-	cout << SPACE SPACE2"█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
+	const string devNames[] =  { {(SPACE SPACE2 "                                                    ")},
+			  	                 {(SPACE SPACE2 "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄")},
+				                 {(SPACE SPACE2 "█                                                  █") },
+				                 {(SPACE SPACE2 "█                 Kervin Bardilas                  █") },
+			                     {(SPACE SPACE2 "█                 Kendrick Lanuza                  █") },
+			                     {(SPACE SPACE2 "█                  Jules Omambac                   █") },
+			                     {(SPACE SPACE2 "█                                                  █") },
+			                     {(SPACE SPACE2 "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█")}};
 
+	int devSize = sizeof(devNames) / sizeof(devNames[0]);
+	PrintAnimation(devNames, devSize, 200);
+	
 	string choice;
 	while (1) {
 		//enter y - yes or n - no
-		cout << endl << SPACE SPACE2 "See developers description(y/n): ";
+		cout << endl;
+		PrintCharDelay2(SPACE SPACE2 "See developers description(y/n): ");
+		
 		cin >> choice;
-
+		
 		if (choice == "Y" || choice == "y"){
-			cout << endl << SPACE SPACE2 "Name:   Kervin Bardilas" << endl;
-			cout << SPACE SPACE2 "Age:    20" << endl;
-			cout << SPACE SPACE2 "Gender: Male" << endl;
-			cout << SPACE SPACE2 "Motto:  Mottotoy" << endl;
+			
+			const string DEVDESCRIPTION1[] = { 
+							{(SPACE SPACE2 "Age:    20")},	
+						        {(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };  
 
-			cout << endl << SPACE SPACE2 "Name:   Kendrick Lanuza" << endl;
-			cout << SPACE SPACE2 "Age:    19" << endl;
-			cout << SPACE SPACE2 "Gender: Male" << endl;
-			cout << SPACE SPACE2 "Motto:  Just do it" << endl;
+			const string DEVDESCRIPTION2[] = { 
+						        {(SPACE SPACE2 "Age:    20")},	
+							{(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
 
-			cout << endl << SPACE SPACE2 "Name: Jules Omambac" << endl;
-			cout << SPACE SPACE2 "Age: 18" << endl;
-			cout << SPACE SPACE2 "Gender: Male" << endl;
-			cout << SPACE SPACE2 "Motto:  Mototoy" << endl;
+			const string DEVDESCRIPTION3[] = { 
+							{(SPACE SPACE2 "Age:    20")},	
+							{(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
+											  
+			const string* devDescription[] = {DEVDESCRIPTION1,  DEVDESCRIPTION2, DEVDESCRIPTION3};
+			int devSizes[] = {
+    						sizeof(DEVDESCRIPTION1) / sizeof(DEVDESCRIPTION1[0]),
+    						sizeof(DEVDESCRIPTION2) / sizeof(DEVDESCRIPTION2[0]),
+   						sizeof(DEVDESCRIPTION3) / sizeof(DEVDESCRIPTION3[0]) };
+   												  
+			const string DEVNAMES[] = { 
+						{("Name:   Kervin Bardilas")},	
+						{("Name:   Kendrick Lanuza")}, 
+						{("Name:   Jules Omambac")} }; 
+											  
+			int numDetails = sizeof(devDescription) / sizeof(devDescription[0]);
+											  
+			for(int i = 0; i < numDetails; i++) {
+				PrintCharDelay(SPACE SPACE2 + DEVNAMES[i], 25);
+				PrintAnimation(devDescription[i], devSizes[i],200);
+			}
 			break;
-		} else if (choice == "N" || choice == "n") {
+			
+			} else if (choice == "N" || choice == "n") {
+
 			cout << SPACE SPACE2 "Returning to main menu!" << endl;
 			STATUS = MAINMENU;
 			break;
-		} else {
-			cout << SPACE SPACE2 "Invalid choice!" << endl;
+			} else {
+				cout << SPACE SPACE2 "Invalid choice!" << endl;
 		}
 
 	}
@@ -1112,20 +1162,23 @@ void DevelopersPage() {
 void How_To_Play() {
 	system("cls");
 	TicTacToeArt();
-	cout << "\n" SPACE2 "How to Play Tic-Tac-Toe" << endl;
-    cout << "\n" SPACE2 "1. The game is played on a 3x3 grid." << endl;
-    cout << "" SPACE2 "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
-    cout << "" SPACE2 "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
-    cout << "" SPACE2 "4. The first player to get three of their marks in a row (vertically, horizontally, or diagonally) wins the round." << endl;
-    cout << "" SPACE2 "5. If all 9 spaces are filled and no player has three in a row, the round is a draw." << endl;
-    cout << "" SPACE2 "6. The game continues until all selected rounds are completed." << endl;
+	cout << "\n" SPACE "How to Play Tic-Tac-Toe" << endl;
+    cout << "\n" SPACE "1. The game is played on a 3x3 grid." << endl;
+    cout << "" SPACE "2. Player 1 will be \"X\" and Player 2 (or Computer) will be \"O\"." << endl;
+    cout << "" SPACE "3. Players take turns placing their mark (X or O) in an empty spot." << endl;
+    cout << "" SPACE "4. The first player to get three of their marks in a row" << endl;
+	cout << "" SPACE "   (vertically, horizontally, or diagonally) wins the round." << endl;
+    cout << "" SPACE "5. If all 9 spaces are filled and no player has three in a row, the" << endl;
+    cout << "" SPACE "   round is a draw." << endl;
+    cout << "" SPACE "6. The game continues until all selected rounds are completed." << endl;
 
-    cout << "\n" SPACE2 "Controls:" << endl;
-    cout << "" SPACE2 "- Enter the number (1 to 9) corresponding to the space you want to mark." << endl;
-    cout << "" SPACE2 "- Invalid moves (selecting an already occupied space) will result on giving you a chance to take another move." << endl;
+    cout << "\n" SPACE "Controls:" << endl;
+    cout << "" SPACE "- Enter the number (1 to 9) corresponding to the space you want to mark." << endl;
+    cout << "" SPACE "- Invalid moves (selecting an already occupied space) will result on" << endl;
+    cout << "" SPACE "  giving you a chance to take another move." << endl;
 
-    cout << "\n" SPACE2 "Have fun and enjoy the game!\n" << endl;
-	cout << SPACE2 "Press any key to continue ...";
+    cout << "\n" SPACE "Have fun and enjoy the game!\n" << endl;
+	cout << SPACE "Press any key to continue ...";
 	_getch();
 	STATUS = SETTINGS;
 }
@@ -1263,13 +1316,11 @@ void ChangeBackgroundColor() {
         //backgroundColor = "0";
         Pause(700);
         cin.clear();
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
         STATUS = SELECT_BACKGROUNDCOLOR;
         return;
     }
 
     cin.clear();
-    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	if(colorChoice == 0) {
     	STATUS = SETTINGS;
@@ -1343,7 +1394,6 @@ void clearKeyboardBuffer() {
 void SettingsMenu() { // Not complete, but some progress made
     system("cls");
     TicTacToeArt();
-    //int choice;
 	
 	string soundtext;
 	if(ENABLE_SOUNDS == 1)
@@ -1351,15 +1401,14 @@ void SettingsMenu() { // Not complete, but some progress made
 	else
 		soundtext = "OFF";
 
-    cout << "\n" SPACE2 "Settings Menu" << endl;
-    cout << "" SPACE2 "1. Change Player Symbols" << endl;
-    cout << "" SPACE2 "2. Change Board Color" << endl;
-    cout << "" SPACE2 "3. Change Background " << endl;
-    cout << "" SPACE2 "4. Sounds: " << soundtext << endl;
-    cout << "" SPACE2 "5. Exit Settings" << endl;
-    cout << "" SPACE2 "6. Reset Settings" << endl;
-    //cout << "\n" SPACE2 "Enter your choice: ";
-    //cin >> choice;
+    cout << "\n" SPACE "Settings Menu" << endl;
+    cout << "" SPACE "1. Change Player Symbols" << endl;
+    cout << "" SPACE "2. Change Board Color" << endl;
+    cout << "" SPACE "3. Change Background " << endl;
+    cout << "" SPACE "4. Sounds: " << soundtext << endl;
+    cout << "" SPACE "5. Exit Settings" << endl;
+    cout << "" SPACE "6. Reset Settings" << endl;
+
     
     string input;
     input = _getch();
@@ -1375,7 +1424,7 @@ void SettingsMenu() { // Not complete, but some progress made
 		cout << "" SPACE2 "Invalid choice. Please enter a valid choice." << endl;
 
 	    cin.clear();
-	    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	   
 	    Pause(800);
 	    STATUS=SETTINGS;
 	    return;
@@ -1386,17 +1435,15 @@ void SettingsMenu() { // Not complete, but some progress made
 
     if(choice < 1 || choice > 6 || cin.fail()) {
 
-	    //STATUS = MAINMENU;
+	
 	    cout << "" SPACE2 "Invalid choice. Please enter a valid choice." << endl;
 
 	    cin.clear();
-	    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	
 	    Pause(800);
 	    STATUS=SETTINGS;
 	    return;
 	}
-
-	//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     switch (choice) {
         case 1: ChangePlayerSymbols(); break;
@@ -1480,8 +1527,7 @@ void DisplayMenu() {
 	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 	input = _getch();
 	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
-	//cout << input;
-	//system("pause");
+
 		
 	bool isValid = true;
     for (char ch : input) {
@@ -1494,7 +1540,6 @@ void DisplayMenu() {
     if(isValid == false) {
 		cin.clear();
 		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
-		////cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		STATUS = MAINMENU;
 		return;
 	}
@@ -1504,7 +1549,6 @@ void DisplayMenu() {
     
     if(status < 1 || status > 5 || cin.fail()) {
 		cin.clear();
-		////cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 		STATUS = MAINMENU;
 	}
