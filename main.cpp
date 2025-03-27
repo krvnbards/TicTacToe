@@ -1,14 +1,20 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <iomanip>
 #include <sstream>
 #include <windows.h>
+#include <conio.h>
+#include <thread>
 #include <limits>
 #include <climits>
+#include <cctype>
 #include <cstdlib>
 #include <ctime> 
+#include <mutex>
 
-#define SPACE "                    "
-#define SPACE2 "     "
+#define SPACE "                      "
+#define SPACE2 "       "
 
 using namespace std;
 
@@ -90,6 +96,10 @@ void DisplayBoard();
 void clearBoard();
 
 void roundEnd(int winner);
+
+void PrintCharDelay ();
+void PrintCharDelay2 ();
+void PrintAnimation ();
 
 void How_To_Play();
 void DevelopersPage();
@@ -675,49 +685,101 @@ void DisplayBoard() {
     cout << setw(35) << "     |     |     " << setw(35) << "     |     |     \n";
 }
 
+void PrintCharDelay (string text, int delay = 50) {
+	for (char ch : text) {
+		cout << ch;
+		Sleep(delay);
+	}
+	cout << endl;
+}
+void PrintCharDelay2 (string text, int delay = 50) {
+	for (char ch : text) {
+		cout << ch;
+		Sleep(delay);
+	}
+}
+
+void PrintAnimation(const string lines[], int size, int delay = 500) {
+	for (int i = 0; i < size; i++) {
+        cout << lines[i] << endl;
+        this_thread::sleep_for(chrono::milliseconds(delay)); 
+	}
+}
+
 void DevelopersPage() {
 	system("cls");
 	TicTacToeArt();
 	DevelopersArt();
-	cout << setw(76) << "====================================================" << endl;
-	cout << setw(76) << "|                 Kervin Bardilas                  |" << endl;
-	cout << setw(76) << "|                 Kendrick Lanuza                  |" << endl;
-	cout << setw(76) << "|                  Jules Omambac                   |" << endl;
-	cout << setw(76) << "====================================================" << endl;
+	const string devNames[] =  { {(SPACE SPACE2 "                                                    ")},
+				   {(SPACE SPACE2 "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄")},
+				   {(SPACE SPACE2 "█                                                  █") },
+				   {(SPACE SPACE2 "█                 Kervin Bardilas                  █") },
+			           {(SPACE SPACE2 "█                 Kendrick Lanuza                  █") },
+			           {(SPACE SPACE2 "█                  Jules Omambac                   █") },
+			           {(SPACE SPACE2 "█                                                  █") },
+			           {(SPACE SPACE2 "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█")}};
 
+	int devSize = sizeof(devNames) / sizeof(devNames[0]);
+	PrintAnimation(devNames, devSize, 200);
+	
 	string choice;
 	while (1) {
 		//enter y - yes or n - no
-		cout << setw(57) << endl << "See developers description(y/n): ";
+		cout << endl;
+		PrintCharDelay2(SPACE SPACE2 "See developers description(y/n): ");
+		
 		cin >> choice;
-
+		
 		if (choice == "Y" || choice == "y"){
-			cout << setw(47) << endl << "Name:   Kervin Bardilas" << endl;
-			cout << setw(35) << "Age:    Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(37) << "Motto:  Motto" << endl;
+			
+			const string DEVDESCRIPTION1[] = { 
+							{(SPACE SPACE2 "Age:    20")},	
+						        {(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };  
 
-			cout << setw(47) << endl <<"Name:   Kendrick Lanuza" << endl;
-			cout << setw(35) << "Age:    Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(37) << "Motto:  Motto" << endl;
+			const string DEVDESCRIPTION2[] = { 
+						        {(SPACE SPACE2 "Age:    20")},	
+							{(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
 
-			cout << setw(43) << endl <<"Name: Jules Omambac" << endl;
-			cout << setw(32) << "Age: Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(36) << "Motto: Motto" << endl;
+			const string DEVDESCRIPTION3[] = { 
+							{(SPACE SPACE2 "Age:    20")},	
+							{(SPACE SPACE2 "Gender: Male")}, 
+							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
+											  
+			const string* devDescription[] = {DEVDESCRIPTION1,  DEVDESCRIPTION2, DEVDESCRIPTION3};
+			int devSizes[] = {
+    						sizeof(DEVDESCRIPTION1) / sizeof(DEVDESCRIPTION1[0]),
+    						sizeof(DEVDESCRIPTION2) / sizeof(DEVDESCRIPTION2[0]),
+   						sizeof(DEVDESCRIPTION3) / sizeof(DEVDESCRIPTION3[0]) };
+   												  
+			const string DEVNAMES[] = { 
+						{("Name:   Kervin Bardilas")},	
+						{("Name:   Kendrick Lanuza")}, 
+						{("Name:   Jules Omambac")} }; 
+											  
+			int numDetails = sizeof(devDescription) / sizeof(devDescription[0]);
+											  
+			for(int i = 0; i < numDetails; i++) {
+				PrintCharDelay(SPACE SPACE2 + DEVNAMES[i], 25);
+				PrintAnimation(devDescription[i], devSizes[i],200);
+			}
 			break;
-		} else if (choice == "N" || choice == "n") {
-			cout << "Returning to main menu!" << endl;
+			
+			} else if (choice == "N" || choice == "n") {
+
+			cout << SPACE SPACE2 "Returning to main menu!" << endl;
 			STATUS = MAINMENU;
 			break;
-		} else {
-			cout << setw(39) << "Invalid choice!" << endl;
+			} else {
+				cout << SPACE SPACE2 "Invalid choice!" << endl;
 		}
 
 	}
 
-	system("pause");
+	//system("pause");
+	cout << SPACE "  Press any key to continue ...";
+	_getch();
 	STATUS = MAINMENU;
 }
 
