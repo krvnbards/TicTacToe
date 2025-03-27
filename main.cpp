@@ -3,17 +3,18 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
-//#define _WIN32_WINNT 0x0500
 #include <windows.h>
+#include <conio.h>
 #include <thread>
 #include <limits>
 #include <climits>
+#include <cctype>
 #include <cstdlib>
 #include <ctime> 
 #include <mutex>
 
-#define SPACE "                    "
-#define SPACE2 "     "
+#define SPACE "                      "
+#define SPACE2 "       "
 
 using namespace std;
 
@@ -38,8 +39,6 @@ char legendBoard[3][3] = {
 
 int currentPlayer;
 
-char marker[] = {'O', 'X'};
-
 char playerSymbols[2]; // changed marker to this para sa SettingsMenu()
 
 
@@ -55,6 +54,9 @@ int currentRound = 1;
 int playerScore[2];
 int autoPause = 0; // Pause = 0 Pause = 1
 
+int ENABLE_SOUNDS = 1;
+
+int enableLoading = 0; // Disable ni para mawala ang loading sa start
 
 string boardColor; // Default white
 string backgroundColor; // Default black background
@@ -63,7 +65,7 @@ string finalCombined = colo + backgroundColor + boardColor;
 const char *charColor = finalCombined.c_str();
 
 bool resetProgress = false;
-
+string LOADING_FILE = "resources/settings.txt";
 
 // KERVIN: Save the player state
 enum stat_list {
@@ -78,7 +80,9 @@ enum stat_list {
 	GAME_SELECT_ROUNDS,
 	GAME_SELECT_DIFFICULTY,
 	GAME_STARTED,
-	GAME_END
+	GAME_END,
+	SELECT_BOARDCOLOR,
+	SELECT_BACKGROUNDCOLOR,
 };
 
 // KERVIN: Inialize para mo start sya sa main menu
@@ -113,14 +117,23 @@ int checkWinner();
 void Pause(int ms);
 void clearKeyboardBuffer();
 
+void ChangeBoardColor();
+void ChangeBackgroundColor();
+
+int tawgako(string input);
+
 void aiEasyMove();
 int evaluate();
 bool availableMoves();
 int minimax(int depth, bool isMaximizing);
 void aiMiniMax();
 
-void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], const std::string& filename);
-void loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], const std::string& filename);
+void enableANSI();
+void showProgressBar(int total, int consoleWidth);
+int getConsoleWidth();
+
+void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], int& enableSounds, const std::string& filename);
+bool loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], int& enableSounds, std::string& filename);
 
 std::mutex consoleMutex;
 
@@ -130,26 +143,36 @@ void SetConsoleSize(int width, int height);
 
 //[-----------------------------------------------------------------------------]
 int main() {
-	boardColor = "7";
-	backgroundColor = "0";
-	finalCombined = colo + backgroundColor + boardColor;
-	charColor = finalCombined.c_str();
-	string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
+	
+	SetConsoleOutputCP(CP_UTF8);  
+    enableANSI();                 
 
-    // Load settings from file
-    string loadedBoardColor;
-    string loadedBackgroundColor;
-    char loadedPlayerSymbols[2];
-    loadSettings(loadedBoardColor, loadedBackgroundColor, loadedPlayerSymbols, filename);
+	if(enableLoading == 1) {
+		int consoleWidth = getConsoleWidth(); // Get the console width
+	    cout << "\n\n\n\n\n\n\n\n\n\n\n\n" SPACE SPACE "        \033[0mLOADING GAME...\n"; 
+	    showProgressBar(100, consoleWidth);
+	}
+	
+	string filename = LOADING_FILE;
     
-    boardColor = loadedBoardColor;
-	backgroundColor = loadedBackgroundColor;
+    if(!loadSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename)) {
+    	boardColor = "7";
+		backgroundColor = "0";
+		playerSymbols[0] = 'X';
+		playerSymbols[1] = 'O';
+		
+		finalCombined = colo + backgroundColor + boardColor;
+		charColor = finalCombined.c_str();
+	
+	    saveSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename);
+	}
+
 	finalCombined = colo + backgroundColor + boardColor;
 	charColor = finalCombined.c_str();
 	
-	playerSymbols[0] = loadedPlayerSymbols[0];
-	playerSymbols[1] = loadedPlayerSymbols[1];
-    
+	if(ENABLE_SOUNDS)
+		PlaySound(TEXT("resources/gamemusic-6082.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
+	
 	system(charColor);
 	srand(time(0));
 	ResetGameSettings();
@@ -169,7 +192,7 @@ int main() {
 
 				int choice;
 				while(GAME_DIFFICULTY < 1) {
-					cout << setw(50) << "\n" SPACE "Please select the level of difficulty for Computer:\n\n" SPACE "[1] Easy\n" SPACE "[2] Medium (not available)\n" SPACE "[3] Hard\n" SPACE "Enter your choice: ";
+					cout << setw(50) << "\n" SPACE "Please select the level of difficulty for Computer:\n\n" SPACE "[1] Easy\n" SPACE "[2] Medium\n" SPACE "[3] Hard\n" SPACE "Enter your choice: ";
 					cin >> choice;
 					
 					if(choice < 1 || choice > 3 || cin.fail()) {
@@ -190,13 +213,12 @@ int main() {
 				TicTacToeArt();
 
 				cout << endl << endl;
-			 	cout << SPACE " ________________________________________________________________________ " << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|                   Please enter name for Player 1                       |" << endl;
-			    cout << SPACE "|________________________________________________________________________|" << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|________________________________________________________________________|" << endl;
+			 	cout << SPACE "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl;
+			    cout << SPACE "█                   Please enter name for Player 1                       █" << endl;
+			    cout << SPACE "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
+			    cout << SPACE "█                                                                        █" << endl;
+			    cout << SPACE "█                                                                        █" << endl;
+			    cout << SPACE "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
 			    
 			    
 			    cout << "\033[2A";  
@@ -210,7 +232,13 @@ int main() {
 					STATUS = GAME_ENTER_NAME2;
 				}
 				else {
-					PlayerName[1] = "Computer";
+					if(GAME_DIFFICULTY == 1)
+						PlayerName[1] = "Computer (E)";
+					else if(GAME_DIFFICULTY == 2)
+						PlayerName[1] = "Computer (M)";
+					else if(GAME_DIFFICULTY == 3)
+						PlayerName[1] = "Computer (H)";
+						
 					STATUS = GAME_SELECT_ROUNDS;
 				}
 				break;
@@ -219,21 +247,26 @@ int main() {
 				system("cls");
 				TicTacToeArt();
 
-				cout << setw(50) << "\n\n";
 				cout << endl << endl;
-			 	cout << SPACE " ________________________________________________________________________ " << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|                   Please enter name for Player 2                       |" << endl;
-			    cout << SPACE "|________________________________________________________________________|" << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|                                                                        |" << endl;
-			    cout << SPACE "|________________________________________________________________________|" << endl;
+			 	cout << SPACE "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl;
+			    cout << SPACE "█                   Please enter name for Player 2                       █" << endl;
+			    cout << SPACE "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
+			    cout << SPACE "█                                                                        █" << endl;
+			    cout << SPACE "█                                                                        █" << endl;
+			    cout << SPACE "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
 			    
 			    
 			    cout << "\033[2A";  
 			    cout << "\033[46C"; 
 				//cin >> PlayerName[0];
 			    getline(cin >> ws, PlayerName[1]);
+			    
+			    if(PlayerName[0].compare(PlayerName[1]) == 0) {
+			    	cout << endl << endl << SPACE "The name cannot be the same with Player 1.";
+			    	Pause(1000);
+			    	STATUS = GAME_ENTER_NAME2;
+			    	break;
+				}
 
 				STATUS = GAME_SELECT_ROUNDS;
 				break;
@@ -264,6 +297,14 @@ int main() {
                 ExitGame();
                 break;
             }
+            case SELECT_BOARDCOLOR: {
+            	ChangeBoardColor();
+				break;
+			}
+			case SELECT_BACKGROUNDCOLOR: {
+				ChangeBackgroundColor();
+				break;
+			}
             case GAME_END: {
             	char choice;
             	while(1) {
@@ -337,11 +378,39 @@ void aiEasyMove() {
     }
 }
 
-#include <iostream>
-#include <windows.h>
-#include <thread>
-#include <mutex>
+void enableANSI() {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
 
+void showProgressBar(int total, int consoleWidth) {
+    const int barWidth = 50; // Width of the progress bar
+    int padding = (consoleWidth - barWidth - 4) / 2; // Centering spaces
+
+    std::cout << "\033[1;0m"; // Set green color
+
+    for (int i = 0; i <= total; ++i) {
+        int pos = (i * barWidth) / total;
+
+        std::cout << "\r" << std::string(padding, ' ') << "[";
+        for (int j = 0; j < barWidth; ++j) {
+            std::cout << (j < pos ? "█" : "░");
+        }
+        std::cout << "] " << i << "% " << std::flush;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+int getConsoleWidth() {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    int width = 80; // Default width
+    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+        width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    }
+    return width;
+}
 
 void DisplayConsoleSize() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -397,42 +466,51 @@ void SetConsoleSize(int width, int height) {
     std::cout << "Console size set to " << width << "x" << height << std::endl;
 }
 
-void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], const std::string& filename) {
+void saveSettings(const std::string& boardColor, const std::string& backgroundColor, char playerSymbols[2], int& enableSounds, const std::string& filename) {
     std::ofstream file(filename);
     if (file.is_open()) {
         file << boardColor << std::endl;
         file << backgroundColor << std::endl;
         file << playerSymbols[0] << std::endl;
         file << playerSymbols[1] << std::endl;
-        std::cout << "Settings saved successfully!" << std::endl;
+        file << enableSounds;
+        //std::cout << "Settings saved successfully!" << std::endl;
     } else {
-        std::cerr << "Unable to open file for saving." << std::endl;
+        //std::cerr << "Unable to open file for saving." << std::endl;
     }
 }
 
-void loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], const std::string& filename) {
+bool  loadSettings(std::string& boardColor, std::string& backgroundColor, char playerSymbols[2], int& enableSounds, std::string& filename) {
     std::ifstream file(filename);
     if (file.is_open()) {
         std::getline(file, boardColor);
         std::getline(file, backgroundColor);
         file >> playerSymbols[0];
         file >> playerSymbols[1];
-        std::cout << "Settings loaded successfully!" << std::endl;
+        file >> ENABLE_SOUNDS;
+        //std::cout << "Settings loaded successfully!" << std::endl;
+        return true;
     } else {
-        std::cerr << "Unable to open file for loading." << std::endl;
+        //std::cerr << "Unable to open file for loading." << std::endl;
+        return false;
     }
 }
 
 void Winner(int winner) {
+	
+	if(ENABLE_SOUNDS)
+			PlaySound(TEXT("resources/overall-victory.wav"), NULL, SND_FILENAME | SND_ASYNC);
+		
 	int time=3000;
 	while(time > 0)
 	{
 		system("cls");
 		TicTacToeArt();
-
+			
 		cout << endl << setw(40) << PlayerName[winner] << " has won the overall rounds with a score of " << playerScore[winner] << "!" << endl;
 
 		cout << setw(55) << "SCORE BREAKDOWN" << endl;
+		cout << "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl << endl;
 		cout << setw(50) << PlayerName[0] << " - " << playerScore[0] << endl;
 		cout << setw(50) << PlayerName[1] << " - " << playerScore[1] << endl;
 		cout << setw(50) << "Please wait " << time/1000 << " seconds..." << endl;
@@ -450,14 +528,27 @@ void Pause(int ms) {
 	if(autoPause == 1) {
 		system("pause");
 	} else {
+		
 		Sleep(ms); 
+		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 	    clearKeyboardBuffer();
 	}
 }
 
 void roundEnd(int winner) {
 
-	cout << setw(40) << PlayerName[winner] << " wins the round!" << endl;
+	if(GAME_MODE == 1) {
+		if(ENABLE_SOUNDS)
+			PlaySound(TEXT("resources/victory.wav"), NULL, SND_FILENAME | SND_ASYNC);
+	} else {
+		if(ENABLE_SOUNDS)
+			if(winner == 0)
+				PlaySound(TEXT("resources/victory.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			else
+				PlaySound(TEXT("resources/lose.wav"), NULL, SND_FILENAME | SND_ASYNC);
+	}
+	cout << endl << setw(40) << PlayerName[winner] << " wins the round!" << endl;
+	
 	currentRound++;
 	playerScore[winner]++;
 
@@ -470,7 +561,7 @@ void roundEnd(int winner) {
     else if (playerScore[1] > playerScore[0] && (playerScore[1] > GAME_ROUNDS/2)) {
     	Pause(1500);
     	Winner(1);
-    	//clearBoard();
+				
     	return;
 	}
     //else if(playerScore[1] == playerScore[0] && currentRound == GAME_ROUNDS) cout << "The game ends in a tie!\n";
@@ -492,25 +583,26 @@ void clearBoard() {
 
 void TicTacToeArt() {
 	string TicTacToeArt = R"(
-
-  _____  _       _____            _____            
- |_   _|(_)  ___|_   _|__ _   ___|_   _|___    ___ 
-   | |  | | / __| | | / _` | / __| | | / _ \  / _ \
-   | |  | || (__  | || (_| || (__  | || (_) ||  __/
-   |_|  |_| \___| |_| \__,_| \___| |_| \___/  \___|
-                                                   
-
+ ██████████████        ███████████             ███████████             
+ █   ███               █   ███   █             █   ███   █             
+     ███   ████  █████     ███  ██████   █████     ███  ██████  ██████ 
+     ███    ███ ███  ███   ███      ███ ███  ███   ███ ███  ██████  ███
+     ███    ███ ███        ███  ███████ ███        ███ ███  ██ ███████ 
+     ███    ███ ███  ███   ███ ███  ███ ███  ███   ███ ███  ██ ███     
+    █████  ████  ██████   ████  ███████  ██████   ████  ██████  ██████ 
+                                                                       
 	)";
 
 	istringstream stream(TicTacToeArt);
     string line;
     while (getline(stream, line)) {
-        std::cout << std::setw(79) << line << std::endl; // Adjust 50 for alignment
+        std::cout << SPACE << line << std::endl; // Adjust 50 for alignment
     }
 
-	cout << setw(55) << "C++ 2025" << endl;
+	cout << SPACE SPACE "C++ 2025" << endl;
 
-	cout << "________________________________________________________________________________________________________________________\n";
+	//cout << "________________________________________________________________________________________________________________________\n";
+	cout << "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n";
 }
 
 int evaluate() {
@@ -613,6 +705,40 @@ void aiMiniMax() {
     }
 }
 
+void aiMediumMove() {
+	for (int i = 0; i < 3; ++i) {
+          for (int j = 0; j < 3; ++j) {
+              if (board[i][j] == ' ') {
+                  board[i][j] = playerSymbols[1];
+                  if (checkWinner() == 1) {
+                      return; 
+                  }
+                  board[i][j] = playerSymbols[0];
+                  if (checkWinner() == 0) {
+                      board[i][j] = playerSymbols[1]; 
+                      return;
+                  }
+                  board[i][j] = ' ';
+              }
+          }
+      }
+      
+      if (board[1][1] == ' ') {
+          board[1][1] = playerSymbols[1];
+          return;
+      }
+      
+      int corners[4][2] = {{0, 0}, {0, 2}, {2, 0}, {2, 2}};
+      for (auto &corner : corners) {
+          if (board[corner[0]][corner[1]] == ' ') {
+              board[corner[0]][corner[1]] = playerSymbols[1];
+              return;
+          }
+      }
+      
+      aiEasyMove();
+}
+
 void StartGame() {
 
 	DisplayBoard();
@@ -621,7 +747,7 @@ void StartGame() {
 	else
 		currentPlayer = 1;
 
-	int slot;
+	string input;
 	firstPlayer = currentPlayer;
 	int confirm = 0;
 	
@@ -632,13 +758,24 @@ void StartGame() {
 		if(GAME_MODE == 2 && currentPlayer == 2) {
 			cout << endl <<  setw(21) << PlayerName[currentPlayer-1] << " (" << playerSymbols[currentPlayer-1] << ") turn to move.. please wait.." << endl;
 			Pause(1500);
-			if(GAME_DIFFICULTY == 1)
+			if(GAME_DIFFICULTY == 1) {
 				aiEasyMove();
-			else if(GAME_DIFFICULTY == 3)
-				aiMiniMax();
-				
+			}
+			else if(GAME_DIFFICULTY == 2) {
+				aiMediumMove();
+			}
+			else if(GAME_DIFFICULTY == 3) {
+				if (rand() % 10 < 3) {  
+			    	aiEasyMove();
+				} else {
+				    aiMiniMax();
+				}
+			}
+			
+			if(ENABLE_SOUNDS)
+				PlaySound(TEXT("resources/mark.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			
 			DisplayBoard();
-
 	        int winner = checkWinner();
 	        if(winner != -1) {
 	        	roundEnd(winner);
@@ -658,11 +795,30 @@ void StartGame() {
 		}
 		
 		cout << endl <<  setw(21) << PlayerName[currentPlayer-1] << " (" << playerSymbols[currentPlayer-1] << ") turn to play, place to mark slot (1-9): ";
-		cin >> slot;
+		cin >> input;
+		
+		bool isValid = true;
+	    for (char ch : input) {
+	        if (!isdigit(ch)) {
+	            isValid = false;
+	            break;
+	        }
+	    }
+	    
+	    if(isValid == false) {
+	    	cout << setw(39) << "Invalid move! Try again.\n";
+            cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            i--; // Retain the turn
 
-
-		if (slot < 0 || slot > 9 || !placeMarker(slot) || cin.fail()) {
-			
+            Pause(1000);
+            continue;
+		}
+		
+		int slot;
+        stringstream(input) >> slot;
+        
+        if(slot < 0 || slot > 9 || !placeMarker(slot)) {
 			if(slot == 0) {
 				char choice;
 				while(choice != 'y' || choice != 'Y' || choice != 'N' || choice != 'n') {
@@ -684,6 +840,7 @@ void StartGame() {
 			            break;
 					}
 				}
+				
 				if(choice == 'y' || choice == 'Y')
 					break;
 				else continue;
@@ -744,19 +901,46 @@ void SelectMode() {
 	while(GAME_MODE < 0) {
 		system("cls");
 		TicTacToeArt();
-		cout << "\n                    [0] Back\n                    [1] Player vs Player\n                    [2] Player vs Computer\n\n                    Enter your choice: ";
-		cin >> GAME_MODE;
-
-
-		if(GAME_MODE < 1 || GAME_MODE > 2 || cin.fail()) {
+		cout << "\n                    [0] Back\n                    [1] Player vs Player\n                    [2] Player vs Computer\n\n                    ";
+		//cin >> GAME_MODE;
+		string input;
+		fflush(stdin);
+		input = _getch();
+		//FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+		//cout << input;
+		//system("pause");
+			
+		bool isValid = true;
+	    for (char ch : input) {
+	        if (!isdigit(ch)) {
+	            isValid = false;
+	            break;
+	        }
+	    }
+	    
+	    if(isValid == false) {
 			if(GAME_MODE == 0) break;
 			GAME_MODE = -1;
 			cin.clear();
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			continue;
+		}
+		
+		int status;
+    	stringstream(input) >> status;
+    	
+    	GAME_MODE = status;
+
+
+		if(GAME_MODE < 1 || GAME_MODE > 2) {
+			if(GAME_MODE == 0) break;
+			GAME_MODE = -1;
+			cin.clear();
+			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			continue;
 		}
 
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 	}
 
 	if(GAME_MODE == 0) {
@@ -773,29 +957,28 @@ void SelectMode() {
 }
 
 int checkWinner() {
-    char p1 = playerSymbols[0]; // Player 1 symbol
-    char p2 = playerSymbols[1]; // Player 2 symbol
+    char p1 = playerSymbols[0]; 
+    char p2 = playerSymbols[1]; 
 
-    // Check rows and columns
+    
     for (int i = 0; i < 3; i++) {
         if (board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
-            if (board[i][0] == p1) return 0; // Player 1 wins
-            if (board[i][0] == p2) return 1; // Player 2 wins
+            if (board[i][0] == p1) return 0; 
+            if (board[i][0] == p2) return 1; 
         }
         if (board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
-            if (board[0][i] == p1) return 0; // Player 1 wins
-            if (board[0][i] == p2) return 1; // Player 2 wins
+            if (board[0][i] == p1) return 0; 
+            if (board[0][i] == p2) return 1; 
         }
     }
-
-    // Check diagonals
+    
     if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-        if (board[0][0] == p1) return 0; // Player 1 wins
-        if (board[0][0] == p2) return 1; // Player 2 wins
+        if (board[0][0] == p1) return 0; 
+        if (board[0][0] == p2) return 1; 
     }
     if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-        if (board[0][2] == p1) return 0; // Player 1 wins
-        if (board[0][2] == p2) return 1; // Player 2 wins
+        if (board[0][2] == p1) return 0; 
+        if (board[0][2] == p2) return 1; 
     }
     return -1; // No winner yet
 }
@@ -807,18 +990,38 @@ void SelectRounds() {
 		TicTacToeArt();
 
 
-		cout << "\n" SPACE "[1] 3 Rounds\n" SPACE "[2] 5 Rounds\n" SPACE "[3] 7 Rounds\n" SPACE "(Soon more rounds/custom)\n" SPACE "Enter your choice:";
-		cin >> GAME_ROUNDS;
+		cout << "\n" SPACE "[0] Back\n" SPACE "[1] 3 Rounds\n" SPACE "[2] 5 Rounds\n" SPACE "[3] 7 Rounds\n" SPACE "(Soon more rounds/custom)\n" SPACE "Enter your choice:";
+		
+		string input;
+		fflush(stdin);
+		input = _getch();
+		
+		bool isValid = true;
+	    for (char ch : input) {
+	        if (!isdigit(ch)) {
+	            isValid = false;
+	            break;
+	        }
+	    }
+	    
+		if(isValid == false) {
+			GAME_ROUNDS = -1;
+			cin.clear();
+			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			continue;
+		}
+		
+		stringstream(input) >> GAME_ROUNDS;
 
 		if(GAME_ROUNDS < 1 || GAME_ROUNDS > 3 || cin.fail()) {
 			GAME_ROUNDS = -1;
 			cin.clear();
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			continue;
 		}
 
 		cin.clear();
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 		switch(GAME_ROUNDS) {
 			case 1: GAME_ROUNDS = 3; break;
@@ -842,66 +1045,67 @@ void DisplayBoard() {
 	cout << setw(25) << right << PlayerName[0] << " - " << playerScore[0] << endl;
 	cout << setw(25) << right << PlayerName[1] << " - " << playerScore[1] << endl << endl;
 
-	cout << setw(21) << "Round: " << currentRound << " / " << GAME_ROUNDS  << setw(40) << "Board Slot" << setw(37) << "Legend" << endl;
-	cout << setw(35) << "     |     |     " << setw(35) << "     |     |      " << setw(40) << "________________________" << endl; // 24
-    cout << setw(20) <<"  " << board[0][0] << "  |  " << board[0][1] << "  |  " << board[0][2] << "  " << setw(19) <<"  " << legendBoard[0][0] << "  |  " << legendBoard[0][1] << "  |  " << legendBoard[0][2] << "    " << setw(15) << " |" <<  setw(25) << right <<  "|" << endl;
+	string SPACES = "         ";
 
-    //cout << setw(35) << "_____|_____|_____" << setw(35) << "_____|_____|_____ " << setw(16) << "|" << setw(12) << PlayerName[0] << " == " << playerS[0] <<  setw(8) << "|" << endl;
-    //cout << setw(35) << "     |     |     " << setw(35) << "     |     |      " << setw(16) << "|" << setw(12) << PlayerName[1] << " == " << marker[1] <<  setw(8) << "|" << endl;
-
-    cout << setw(35) << "_____|_____|_____" << setw(35) << "_____|_____|_____ " << setw(16) << "|" << setw(12) << PlayerName[0] << " == " << playerSymbols[0] <<  setw(8) << "|" << endl;
-    cout << setw(35) << "     |     |     " << setw(35) << "     |     |      " << setw(16) << "|" << setw(12) << PlayerName[1] << " == " << playerSymbols[1] <<  setw(8) << "|" << endl;
-
-    cout << setw(20) <<"  " << board[1][0] << "  |  " << board[1][1] << "  |  " << board[1][2] << "  " << setw(19) <<"  " << legendBoard[1][0] << "  |  " << legendBoard[1][1] << "  |  " << legendBoard[1][2] << "   " << setw(41) << "|________________________|" << endl;
-    cout << setw(35) << "_____|_____|_____" << setw(35) << "_____|_____|_____\n";
-    cout << setw(35) << "     |     |     " << setw(35) << "     |     |     \n";
-    cout << setw(20) <<"  " << board[2][0] << "  |  " << board[2][1] << "  |  " << board[2][2] << "  " << setw(19) <<"  " << legendBoard[2][0] << "  |  " << legendBoard[2][1] << "  |  " << legendBoard[2][2] << "  \n";
-    cout << setw(35) << "     |     |     " << setw(35) << "     |     |     \n";
+	cout << SPACE << "Round: " << currentRound << " / " << GAME_ROUNDS  << setw(40) << "Board Slot" << setw(30) << "Legend" << endl << endl;
+	cout << SPACE << "     █     █     " << SPACE << "     █     █      " << SPACES << "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl; // 24
+    cout << SPACE <<"  " << board[0][0] << "  █  " << board[0][1] << "  █  " << board[0][2] << "  " << SPACE <<"  " << legendBoard[0][0] << "  █  " << legendBoard[0][1] << "  █  " << legendBoard[0][2] << SPACES << "   █" << SPACES << SPACES << "    █" << endl;
+    cout << SPACE << "▄▄▄▄▄█▄▄▄▄▄█▄▄▄▄▄" << SPACE << "▄▄▄▄▄█▄▄▄▄▄█▄▄▄▄▄ " << setw(13) << " █ " << setw(12) << PlayerName[0] << " == " << playerSymbols[0] << setw(7) << "█" << endl;
+    cout << SPACE << "     █     █     " << SPACE << "     █     █      " << setw(13) << " █ " << setw(12) << PlayerName[1] << " == " << playerSymbols[1] << setw(7) << "█" << endl;
+    cout << SPACE <<"  " << board[1][0] << "  █  " << board[1][1] << "  █  " << board[1][2] << "  " << SPACE <<"  " << legendBoard[1][0] << "  █  " << legendBoard[1][1] << "  █  " << legendBoard[1][2] << SPACES << "   █" << SPACES << SPACES << "    █" << endl;
+    cout << SPACE << "▄▄▄▄▄█▄▄▄▄▄█▄▄▄▄▄" << SPACE << "▄▄▄▄▄█▄▄▄▄▄█▄▄▄▄▄" << SPACES << " █▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
+    cout << SPACE << "     █     █     " << SPACE << "     █     █     \n";
+    cout << SPACE <<"  " << board[2][0] << "  █  " << board[2][1] << "  █  " << board[2][2] << "  " << SPACE <<"  " << legendBoard[2][0] << "  █  " << legendBoard[2][1] << "  █  " << legendBoard[2][2] << "  \n";
+    cout << SPACE << "     █     █     " << SPACE << "     █     █     \n";
 }
 
 void DevelopersPage() {
 	system("cls");
 	TicTacToeArt();
 	DevelopersArt();
-	cout << setw(76) << "====================================================" << endl;
-	cout << setw(76) << "|                 Kervin Bardilas                  |" << endl;
-	cout << setw(76) << "|                 Kendrick Lanuza                  |" << endl;
-	cout << setw(76) << "|                  Jules Omambac                   |" << endl;
-	cout << setw(76) << "====================================================" << endl;
+	cout << SPACE SPACE2"▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄" << endl;
+	cout << SPACE SPACE2"█                                                  █" << endl;
+	cout << SPACE SPACE2"█                 Kervin Bardilas                  █" << endl;
+	cout << SPACE SPACE2"█                 Kendrick Lanuza                  █" << endl;
+	cout << SPACE SPACE2"█                  Jules Omambac                   █" << endl;
+	cout << SPACE SPACE2"█                                                  █" << endl;
+	cout << SPACE SPACE2"█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█" << endl;
 
 	string choice;
 	while (1) {
 		//enter y - yes or n - no
-		cout << setw(57) << endl << "See developers description(y/n): ";
+		cout << endl << SPACE SPACE2 "See developers description(y/n): ";
 		cin >> choice;
 
 		if (choice == "Y" || choice == "y"){
-			cout << setw(47) << endl << "Name:   Kervin Bardilas" << endl;
-			cout << setw(35) << "Age:    Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(37) << "Motto:  Motto" << endl;
+			cout << endl << SPACE SPACE2 "Name:   Kervin Bardilas" << endl;
+			cout << SPACE SPACE2 "Age:    20" << endl;
+			cout << SPACE SPACE2 "Gender: Male" << endl;
+			cout << SPACE SPACE2 "Motto:  Mottotoy" << endl;
 
-			cout << setw(47) << endl <<"Name:   Kendrick Lanuza" << endl;
-			cout << setw(35) << "Age:    Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(37) << "Motto:  Motto" << endl;
+			cout << endl << SPACE SPACE2 "Name:   Kendrick Lanuza" << endl;
+			cout << SPACE SPACE2 "Age:    19" << endl;
+			cout << SPACE SPACE2 "Gender: Male" << endl;
+			cout << SPACE SPACE2 "Motto:  Just do it" << endl;
 
-			cout << setw(43) << endl <<"Name: Jules Omambac" << endl;
-			cout << setw(32) << "Age: Age" << endl;
-			cout << setw(36) << "Gender: Male" << endl;
-			cout << setw(36) << "Motto: Motto" << endl;
+			cout << endl << SPACE SPACE2 "Name: Jules Omambac" << endl;
+			cout << SPACE SPACE2 "Age: 18" << endl;
+			cout << SPACE SPACE2 "Gender: Male" << endl;
+			cout << SPACE SPACE2 "Motto:  Mototoy" << endl;
 			break;
 		} else if (choice == "N" || choice == "n") {
-			cout << "Returning to main menu!" << endl;
+			cout << SPACE SPACE2 "Returning to main menu!" << endl;
 			STATUS = MAINMENU;
 			break;
 		} else {
-			cout << setw(39) << "Invalid choice!" << endl;
+			cout << SPACE SPACE2 "Invalid choice!" << endl;
 		}
 
 	}
 
-	system("pause");
+	//system("pause");
+	cout << SPACE "  Press any key to continue ...";
+	_getch();
 	STATUS = MAINMENU;
 }
 
@@ -921,33 +1125,32 @@ void How_To_Play() {
     cout << "" SPACE2 "- Invalid moves (selecting an already occupied space) will result on giving you a chance to take another move." << endl;
 
     cout << "\n" SPACE2 "Have fun and enjoy the game!\n" << endl;
-	system("pause");
-	STATUS = MAINMENU;
+	cout << SPACE2 "Press any key to continue ...";
+	_getch();
+	STATUS = SETTINGS;
 }
 
 void DevelopersArt() {
 	string DevelopersArt =	 R"(                                            
-      ___               _                           
-     /   \_____   _____| | ___  _ __   ___ _ __ ___ 
-    / /\ / _ \ \ / / _ | |/ _ \| '_ \ / _ | '__/ __|
-   / /_/|  __/\ V |  __| | (_) | |_) |  __| |  \__ \
-  /___,' \___| \_/ \___|_|\___/| .__/ \___|_|  |___/
-                               |_|                  
+ █▀▄ █▀▀ █ █ █▀▀ █   █▀█ █▀█ █▀▀ █▀▄ █▀▀  
+ █ █ █▀▀ ▀▄▀ █▀▀ █   █ █ █▀▀ █▀▀ █▀▄ ▀▀█  
+ ▀▀  ▀▀▀  ▀  ▀▀▀ ▀▀▀ ▀▀▀ ▀   ▀▀▀ ▀ ▀ ▀▀▀  
 	)";
 
 	istringstream stream(DevelopersArt);
 	string line;
 	while(getline(stream, line)) {
-		std::cout << std::setw(75) << line << std::endl;
+		std::cout << SPACE SPACE2 "     "<< line << std::endl;
 	}
 }
 
 void ExitGame() {
     system("cls");
     TicTacToeArt();
-    cout << setw(55) << "\nThank you for playing Tic-Tac-Toe!" << endl;
-    cout << setw(55) << "\nExiting the game..." << endl;
-    system("pause");
+    cout << endl << SPACE "Thank you for playing Tic-Tac-Toe!" << endl;
+    cout << endl << SPACE << "Exiting the game..." << endl;
+    cout << SPACE "Press any key to continue ...";
+	_getch();
 	STATUS = MAINMENU;
 	exit(0);
 	system("cls");
@@ -956,18 +1159,18 @@ void ExitGame() {
 void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok najud siya
 	system("cls");
 	TicTacToeArt();
-    cout << setw(55) << "\nEnter symbol for Player 1: ";
+    cout << SPACE << "\nEnter symbol for Player 1: ";
 
     cin >> playerSymbols[0];
-    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    ////cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    cout << setw(55) << "\nEnter symbol for Player 2: ";
+    cout << SPACE << "\nEnter symbol for Player 2: ";
     cin >> playerSymbols[1];
 
 
     cout << setw(55) << "Player symbols updated!" << endl;
-    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
-    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
+    string filename = LOADING_FILE;
+    saveSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename);
     Pause(2000);
     STATUS=SETTINGS;
 }
@@ -975,23 +1178,30 @@ void ChangePlayerSymbols() { // Change symbol feature, Will check later if ok na
 void ChangeBoardColor() {
     system("cls");
     TicTacToeArt();
-    int colorChoice;
+    string input;
+ 
     cout << endl << SPACE "Choose a board color:" << endl;
-    cout << SPACE "[0] Black" << endl << SPACE "[1] Soft Blush (#F2D7D9)" << endl << SPACE "[2] Pale Mint (#D5EED1)" << endl << SPACE "[3] Powder Blue (#D4E4F7)" << endl << SPACE << "[4] Lavender Mist (#E3DDF5)" << endl << SPACE "[5] Peach Fuzz (#FBE1C8)" << endl;
-    cout << setw(60) << "Enter your choice (1-5): ";
-    cin >> colorChoice;
+    cout << SPACE "[0] Back" << endl << SPACE "[1] Soft Blush" << endl << SPACE "[2] Pale Mint" << endl << SPACE "[3] Powder Blue" << endl << SPACE << "[4] Lavender Mist" << endl << SPACE "[5] Peach Fuzz" << endl << SPACE "[6] Black" << endl;
+   // cout << SPACE "Enter your choice (1-5): ";
+   // cin >> colorChoice;
+   
+   input = _getch();
+   int colorChoice = tawgako(input);
 
-    if(colorChoice < 0 || colorChoice > 5 || cin.fail()) {
-        boardColor = "7";
-        cout << setw(55) << "Invalid choice. Defaulting to white." << endl;
+    if(colorChoice < 0 || colorChoice > 6 || colorChoice == -1) {
+        //boardColor = "7";
+        cout << setw(55) << "Invalid choice." << endl;
         Pause(700);
         cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        STATUS = SETTINGS;
+        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        STATUS = SELECT_BOARDCOLOR;
         return;
     }
 
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    if(colorChoice == 0) {
+    	STATUS = SETTINGS;
+    	return;
+	}
 
     switch(colorChoice) {
         case 1: boardColor = "d"; break; // Soft Blush (#F2D7D9)
@@ -999,41 +1209,72 @@ void ChangeBoardColor() {
         case 3: boardColor = "b"; break; // Powder Blue (#D4E4F7)
         case 4: boardColor = "c"; break; // Lavender Mist (#E3DDF5)
         case 5: boardColor = "e"; break; // Peach Fuzz (#FBE1C8)
+        case 6: boardColor = "0"; break;
         default: boardColor = "0"; break;
     }
 
-    cout << "\nBoard color updated!" << endl;
+    cout << endl << SPACE "Board color updated! Please wait a moment..." << endl;
     finalCombined = colo + backgroundColor + boardColor;
     charColor = finalCombined.c_str();
     system(charColor);
-    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
-    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
-    Pause(3000);
-    STATUS = SETTINGS;
+    string filename = LOADING_FILE;
+    saveSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename);
+    Pause(1500);
+    STATUS = SELECT_BOARDCOLOR;
 }
 
+void ResetDisplaySettings() {
+	string filename = LOADING_FILE;
+	boardColor = "7";
+	backgroundColor = "0";
+	playerSymbols[0] = 'X';
+	playerSymbols[1] = 'O';
+		
+	finalCombined = colo + backgroundColor + boardColor;
+	charColor = finalCombined.c_str();
+	finalCombined = colo + backgroundColor + boardColor;
+	charColor = finalCombined.c_str();
+	
+	system(charColor);
+	
+	saveSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename);
+	
+	cout << endl << SPACE "Display settings have been reset. Please wait a moment..." << endl;
+	Pause(1500);
+    STATUS = SETTINGS;
+}
 
 void ChangeBackgroundColor() {
     system("cls");
     TicTacToeArt();
-    int colorChoice;
-    cout << endl << setw(55) << "Choose a board color:" << endl;
-    cout << SPACE "[0] Black\n" << SPACE "[1] Dusty Mauve\n" << SPACE "[2] Deep Sage\n" << SPACE "[3] Stormy Blue\n" << SPACE "[4] Charcoal Lavender\n" << SPACE "[5] Slate Gray\n" << endl; 
-    cout << setw(60) << "Enter your choice (1-5): ";
-    cin >> colorChoice;
+    string input;
+    
+    cout << endl << SPACE "Choose a background color:" << endl;
+    cout << SPACE "[0] Back\n" << SPACE "[1] Dusty Mauve\n" << SPACE "[2] Deep Sage\n" << SPACE "[3] Stormy Blue\n" << SPACE "[4] Charcoal Lavender\n" << SPACE "[5] Slate Gray\n" << SPACE "[6] Black" << endl; 
+    cout << SPACE "Enter your choice (1-5): ";
+    //cin >> colorChoice;
+    
+    input = _getch();
+    int colorChoice = tawgako(input);
+    
 
-    if(colorChoice < 1 || colorChoice > 5 || cin.fail()) {
-        cout << "Invalid choice. Defaulting to black." << endl;
-        backgroundColor = "0";
+    if(colorChoice < 0 || colorChoice > 6 || colorChoice == -1) {
+        cout << "Invalid choice. " << endl;
+        //backgroundColor = "0";
         Pause(700);
         cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        STATUS = SETTINGS;
+        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        STATUS = SELECT_BACKGROUNDCOLOR;
         return;
     }
 
     cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+	if(colorChoice == 0) {
+    	STATUS = SETTINGS;
+    	return;
+	}
 
     switch(colorChoice) {
         case 1: backgroundColor = "5"; break; // Dusty Mauve
@@ -1041,18 +1282,19 @@ void ChangeBackgroundColor() {
         case 3: backgroundColor = "3"; break; // Stormy Blue
         case 4: backgroundColor = "6"; break; // Charcoal Lavender
         case 5: backgroundColor = "7"; break; // Muted Teal
+        case 6: backgroundColor = "0"; break;
         default: backgroundColor = "0"; break;
     }
 
     finalCombined = colo + backgroundColor + boardColor;
     charColor = finalCombined.c_str();
     system(charColor);
-    string filename = "C:/Users/Admin/Desktop/TicTacToe/settings.txt";
-    saveSettings(boardColor, backgroundColor, playerSymbols, filename);
-    cout << "\nBackground color changed!" << endl;
+    string filename = LOADING_FILE;
+    saveSettings(boardColor, backgroundColor, playerSymbols, ENABLE_SOUNDS, filename);
+    cout << endl << SPACE "Background color changed! Please wait a moment..." << endl;
 
     Pause(700);
-    STATUS = SETTINGS;
+    STATUS = SELECT_BACKGROUNDCOLOR;
 }
 
 
@@ -1061,40 +1303,37 @@ bool isDrawPossible() {
     char p2 = playerSymbols[1];
 
     if (checkWinner() != -1) {
-        return false; // The game is already won, no draw should be possible
+        return false;
     }
-
-
-    // Check if there are still possible winning moves
+    
     for (int i = 0; i < 3; i++) {
-        // Check rows
+        
         if ((board[i][0] != p1 && board[i][0] != p2) ||
             (board[i][1] != p1 && board[i][1] != p2) ||
             (board[i][2] != p1 && board[i][2] != p2)) {
             return false;  // A win is still possible
         }
-        // Check columns
+        
         if ((board[0][i] != p1 && board[0][i] != p2) ||
             (board[1][i] != p1 && board[1][i] != p2) ||
             (board[2][i] != p1 && board[2][i] != p2)) {
-            return false;  // A win is still possible
+            return false;  
         }
     }
 
-    // Check diagonals
     if ((board[0][0] != p1 && board[0][0] != p2) ||
         (board[1][1] != p1 && board[1][1] != p2) ||
         (board[2][2] != p1 && board[2][2] != p2)) {
-        return false;  // A win is still possible
+        return false;  
     }
 
     if ((board[0][2] != p1 && board[0][2] != p2) ||
         (board[1][1] != p1 && board[1][1] != p2) ||
         (board[2][0] != p1 && board[2][0] != p2)) {
-        return false;  // A win is still possible
+        return false;  
     }
 
-    return true;  // No more possible wins, declare a draw
+    return true;  
 }
 
 void clearKeyboardBuffer() {
@@ -1104,71 +1343,123 @@ void clearKeyboardBuffer() {
 void SettingsMenu() { // Not complete, but some progress made
     system("cls");
     TicTacToeArt();
-    int choice;
+    //int choice;
+	
+	string soundtext;
+	if(ENABLE_SOUNDS == 1)
+		soundtext = "ON";
+	else
+		soundtext = "OFF";
 
     cout << "\n" SPACE2 "Settings Menu" << endl;
     cout << "" SPACE2 "1. Change Player Symbols" << endl;
     cout << "" SPACE2 "2. Change Board Color" << endl;
     cout << "" SPACE2 "3. Change Background " << endl;
-    cout << "" SPACE2 "4. Exit Settings" << endl;
-    cout << "\n" SPACE2 "Enter your choice: ";
-    cin >> choice;
+    cout << "" SPACE2 "4. Sounds: " << soundtext << endl;
+    cout << "" SPACE2 "5. Exit Settings" << endl;
+    cout << "" SPACE2 "6. Reset Settings" << endl;
+    //cout << "\n" SPACE2 "Enter your choice: ";
+    //cin >> choice;
+    
+    string input;
+    input = _getch();
+    
+    bool isValid = true;
+    for(char ch : input) {
+    	if(!isdigit(ch)) {
+    		isValid = false;
+		}
+	}
+	
+	if(isValid == false) {
+		cout << "" SPACE2 "Invalid choice. Please enter a valid choice." << endl;
 
-    if(choice < 1 || choice > 4 || cin.fail()) {
+	    cin.clear();
+	    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	    Pause(800);
+	    STATUS=SETTINGS;
+	    return;
+	}
+	
+	int choice;
+	stringstream(input) >> choice;
+
+    if(choice < 1 || choice > 6 || cin.fail()) {
 
 	    //STATUS = MAINMENU;
 	    cout << "" SPACE2 "Invalid choice. Please enter a valid choice." << endl;
 
 	    cin.clear();
-	    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
 	    Pause(800);
 	    STATUS=SETTINGS;
 	    return;
 	}
 
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     switch (choice) {
         case 1: ChangePlayerSymbols(); break;
-        case 2: ChangeBoardColor(); break;
-        case 3: ChangeBackgroundColor(); break;
-        case 4: DisplayMenu(); break;
+        case 2: STATUS = SELECT_BOARDCOLOR; break;
+        case 3: STATUS = SELECT_BACKGROUNDCOLOR; break;
+        case 4: {
+        	if(ENABLE_SOUNDS) {
+        		cout << SPACE2 "Sounds have now been disabled!";
+        		PlaySound(NULL, NULL, 0);
+        		ENABLE_SOUNDS = 0;
+        		Pause(1000);
+        		STATUS=SETTINGS;
+        	}
+        	else {
+        		cout << SPACE2 "Sounds are now enabled!";
+        		ENABLE_SOUNDS = 1;
+        		Pause(1000);
+        		STATUS=SETTINGS;
+			}
+        	break;
+    	}
+    	case 5: DisplayMenu(); break;
+        case 6: ResetDisplaySettings(); break;
     }
 }
 
 
 void DisplayMenu() {
+		
 	system("cls");
-
 	TicTacToeArt();
-
-	int status=-1;
-	
+	if(ENABLE_SOUNDS)
+		PlaySound(TEXT("resources/gamemusic-6082.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 	string art = R"(                                             
- ___      _____ _            _____               
-|_  |    |  _  | |___ _ _   |   __|___ _____ ___ 
- _| |_   |   __| | .'| | |  |  |  | .'|     | -_|
-|_____|  |__|  |_|__,|_  |  |_____|__,|_|_|_|___|
-                     |___|                                                                      
- ___    _____              _          _____ _         
-|_  |  |  |  |___ _ _ _   | |_ ___   |  _  | |___ _ _ 
-|  _|  |     | . | | | |  |  _| . |  |   __| | .'| | |
-|___|  |__|__|___|_____|  |_| |___|  |__|  |_|__,|_  |
-                                                 |___|                                           
- ___    ____              _                     
-|_  |  |    \ ___ _ _ ___| |___ ___ ___ ___ ___ 
-|_  |  |  |  | -_| | | -_| | . | . | -_|  _|_ -|
-|___|  |____/|___|\_/|___|_|___|  _|___|_| |___|
-                               |_|                                           
- ___    _____     _   _   _             
-| | |  |   __|___| |_| |_|_|___ ___ ___ 
-|_  |  |__   | -_|  _|  _| |   | . |_ -|
-  |_|  |_____|___|_| |_| |_|_|_|_  |___|
-                               |___|                      
- ___    _____     _ _   
-|  _|  |   __|_ _|_| |_ 
-|_  |  |   __|_'_| |  _|
-|___|  |_____|_,_|_|_|  	          
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐ ▀█    █▀█ █   █▀█ █ █   █▀▀ █▀█ █▄█ █▀▀▌
+▐  █    █▀▀ █   █▀█  █    █ █ █▀█ █ █ █▀▀▌
+▐ ▀▀▀   ▀   ▀▀▀ ▀ ▀  ▀    ▀▀▀ ▀ ▀ ▀ ▀ ▀▀▀▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌                    
+  
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐ ▀▀▄   █ █ █▀█ █ █   ▀█▀ █▀█   █▀█ █   █▀█ █ █▌
+▐ ▄▀    █▀█ █ █ █▄█    █  █ █   █▀▀ █   █▀█  █ ▌
+▐ ▀▀▀   ▀ ▀ ▀▀▀ ▀ ▀    ▀  ▀▀▀   ▀   ▀▀▀ ▀ ▀  ▀ ▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
+
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐ ▀▀█   █▀▄ █▀▀ █ █ █▀▀ █   █▀█ █▀█ █▀▀ █▀▄ █▀▀▌
+▐  ▀▄   █ █ █▀▀ ▀▄▀ █▀▀ █   █ █ █▀▀ █▀▀ █▀▄ ▀▀█▌
+▐ ▀▀    ▀▀  ▀▀▀  ▀  ▀▀▀ ▀▀▀ ▀▀▀ ▀   ▀▀▀ ▀ ▀ ▀▀▀▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
+  
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐ █ █   █▀▀ █▀▀ ▀█▀ ▀█▀ ▀█▀ █▀█ █▀▀ █▀▀▌
+▐  ▀█   ▀▀█ █▀▀  █   █   █  █ █ █ █ ▀▀█▌
+▐   ▀   ▀▀▀ ▀▀▀  ▀   ▀  ▀▀▀ ▀ ▀ ▀▀▀ ▀▀▀▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
+
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐ █▀▀   █▀▀ █ █ ▀█▀ ▀█▀▌
+▐ ▀▀▄   █▀▀ ▄▀▄  █   █ ▌
+▐ ▀▀    ▀▀▀ ▀ ▀ ▀▀▀  ▀ ▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌        
 	)";
 
 	istringstream stream(art);
@@ -1178,19 +1469,43 @@ void DisplayMenu() {
     	ios init(NULL);
     	init.copyfmt(cout);
     	
-        std::cout << " " SPACE" " << right << line << std::endl; // Adjust 50 for alignment
+        std::cout << SPACE << line << std::endl; // Adjust 50 for alignment
         
         cout.copyfmt(init);
     }
 
+	string input;
+	cout << endl;
 
-	//cout << "[1] Play Game\n[2] How to Play\n[3] Developers\n[4] Settings\n[5] Exit\n\n" << endl;
-	cout << "" SPACE "   Enter your choice: ";
-	cin >> status;
-
-	if(status < 1 || status > 5 || cin.fail()) {
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	input = _getch();
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	//cout << input;
+	//system("pause");
+		
+	bool isValid = true;
+    for (char ch : input) {
+        if (!isdigit(ch)) {
+            isValid = false;
+            break;
+        }
+    }
+    
+    if(isValid == false) {
 		cin.clear();
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+		////cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		STATUS = MAINMENU;
+		return;
+	}
+	
+	int status;
+    stringstream(input) >> status;
+    
+    if(status < 1 || status > 5 || cin.fail()) {
+		cin.clear();
+		////cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 		STATUS = MAINMENU;
 	}
 
@@ -1210,13 +1525,28 @@ bool placeMarker(int slot) {
 
     if (board[row][col] == ' ') {
 
-        board[row][col] = marker[currentPlayer-1];
-
         board[row][col] = playerSymbols[currentPlayer-1];
+       
+    	if(ENABLE_SOUNDS)
+			PlaySound(TEXT("resources/mark.wav"), NULL, SND_FILENAME | SND_ASYNC);
 
         return true;
     }
     return false;
+}
+
+int tawgako(string input) {
+	bool isValid = true;
+	
+	for(char ch : input) {
+		if(!isdigit(ch)) {
+			return -1;
+		}
+	}
+	
+	int num;
+	stringstream(input) >> num;
+	return num;
 }
 
 //[----------------------------------------------------------------------------] 
