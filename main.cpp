@@ -733,19 +733,23 @@ void DevelopersPage() {
 		if (choice == "Y" || choice == "y"){
 			
 			const string DEVDESCRIPTION1[] = { 
-							{(SPACE SPACE2 "Age:    20")},	
-						        {(SPACE SPACE2 "Gender: Male")}, 
-							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };  
+    					{(SPACE SPACE2 "Age:    20")},    
+   					{(SPACE SPACE2 "Gender: Male")}, 
+    					{(SPACE SPACE2 "Motto:  Do it scared, do it tired, do it broke, do it alone, do it unsure, but do it\n"
+                    			  SPACE SPACE2 "        anyways. Because we think we have forever to chase our dreams\n"
+                      		          SPACE SPACE2 "        but today is all we really have and you'll never get it back.\n"
+					  SPACE SPACE2 "        and you'll never get it back. No regrets!\n")} 
+					};  
 
 			const string DEVDESCRIPTION2[] = { 
 						        {(SPACE SPACE2 "Age:    20")},	
 							{(SPACE SPACE2 "Gender: Male")}, 
-							{(SPACE SPACE2 "Motto:  Just do it\n")} };
+							{(SPACE SPACE2 "Motto:  Just do it!\n")} };
 
 			const string DEVDESCRIPTION3[] = { 
 							{(SPACE SPACE2 "Age:    20")},	
 							{(SPACE SPACE2 "Gender: Male")}, 
-							{(SPACE SPACE2 "Motto:  Live intentionally\n")} };
+							{(SPACE SPACE2 "Motto:  Live intentionally!\n")} };
 											  
 			const string* devDescription[] = {DEVDESCRIPTION1,  DEVDESCRIPTION2, DEVDESCRIPTION3};
 			int devSizes[] = {
