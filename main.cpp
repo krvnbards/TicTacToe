@@ -740,12 +740,12 @@ void DevelopersPage() {
 			const string DEVDESCRIPTION2[] = { 
 						        {(SPACE SPACE2 "Age:    20")},	
 							{(SPACE SPACE2 "Gender: Male")}, 
-							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
+							{(SPACE SPACE2 "Motto:  Just do it\n")} };
 
 			const string DEVDESCRIPTION3[] = { 
 							{(SPACE SPACE2 "Age:    20")},	
 							{(SPACE SPACE2 "Gender: Male")}, 
-							{(SPACE SPACE2 "Motto:  Mottotoy\n")} };
+							{(SPACE SPACE2 "Motto:  Live intentionally\n")} };
 											  
 			const string* devDescription[] = {DEVDESCRIPTION1,  DEVDESCRIPTION2, DEVDESCRIPTION3};
 			int devSizes[] = {
